@@ -1,5 +1,5 @@
 // バージョンを上げるとキャッシュが更新されます（アプリを更新したいとき数字を変える）
-const CACHE = 'rehab-v1';
+const CACHE = 'rehab-v2';
 const ASSETS = [
   './',
   './index.html',

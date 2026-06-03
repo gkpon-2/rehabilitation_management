@@ -201,6 +201,87 @@
     margin-bottom:16px;display:flex;gap:10px;align-items:flex-start;
   }
   .install-hint button{margin-left:auto;background:none;border:none;color:#b07a12;font-weight:800;cursor:pointer;font-size:18px;line-height:1;flex:none;}
+
+  /* ---------- Tabs ---------- */
+  .tabs{
+    display:flex;gap:6px;background:#EFE8D9;border:1px solid var(--line);
+    border-radius:14px;padding:5px;margin-bottom:18px;
+  }
+  .tab{
+    flex:1;border:none;background:none;border-radius:10px;padding:10px;
+    font-size:14.5px;font-weight:800;color:var(--muted);cursor:pointer;transition:.2s;
+  }
+  .tab.on{background:#fff;color:var(--primary-d);box-shadow:0 2px 6px rgba(40,35,25,.08);}
+  .view{display:none;}
+  .view.on{display:block;animation:fade .25s;}
+
+  /* ---------- Calendar ---------- */
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .cal-head .mtitle{font-size:18px;font-weight:800;}
+  .cal-nav{
+    width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:#fff;
+    font-size:18px;font-weight:800;color:var(--primary-d);cursor:pointer;display:flex;
+    align-items:center;justify-content:center;
+  }
+  .cal-nav:disabled{opacity:.3;}
+  .cal-nav:active{transform:scale(.94);}
+  .dow{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px;}
+  .dow div{text-align:center;font-size:11.5px;font-weight:800;color:var(--muted);}
+  .dow div:first-child{color:#C9605A;}
+  .dow div:last-child{color:#5A7FB0;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .cell{
+    aspect-ratio:1/1;border-radius:13px;border:1.5px solid var(--line);background:#fff;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    cursor:pointer;position:relative;transition:transform .1s;
+  }
+  .cell:active{transform:scale(.92);}
+  .cell.empty{border:none;background:none;cursor:default;}
+  .cell .dnum{font-size:14px;font-weight:800;color:var(--ink);}
+  .cell .ddot{width:6px;height:6px;border-radius:50%;background:transparent;}
+  .cell.partial{background:#E9F5EF;border-color:#BFE3D5;}
+  .cell.partial .ddot{background:var(--primary);}
+  .cell.full{background:var(--primary);border-color:var(--primary);}
+  .cell.full .dnum{color:#fff;}
+  .cell.full .ddot{background:#fff;}
+  .cell.full::after{content:"✓";position:absolute;font-size:11px;color:#fff;bottom:5px;font-weight:900;}
+  .cell.full .ddot{display:none;}
+  .cell.today{box-shadow:0 0 0 2.5px var(--gold);}
+  .cell.future{opacity:.4;cursor:default;}
+  .legend{display:flex;gap:16px;justify-content:center;margin-top:16px;font-size:12px;color:var(--muted);font-weight:700;}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .lg-dot{width:12px;height:12px;border-radius:4px;display:inline-block;}
+  .cal-summary{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+    padding:14px 16px;margin-top:16px;box-shadow:var(--shadow);
+    display:flex;justify-content:space-around;text-align:center;
+  }
+  .cal-summary .num{font-size:24px;font-weight:900;color:var(--primary-d);}
+  .cal-summary .lbl{font-size:11.5px;color:var(--muted);font-weight:700;margin-top:2px;}
+
+  /* ---------- Day detail overlay ---------- */
+  .day-detail{
+    position:fixed;inset:0;z-index:55;display:none;align-items:flex-end;justify-content:center;
+    background:rgba(20,30,28,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  }
+  .day-detail.show{display:flex;animation:fade .2s;}
+  .dd-card{
+    background:var(--surface);width:100%;max-width:560px;border-radius:26px 26px 0 0;
+    padding:22px 18px calc(var(--safe-bot) + 26px);box-shadow:var(--shadow-lg);
+    max-height:82vh;overflow-y:auto;animation:slideup .3s cubic-bezier(.2,.9,.3,1);
+  }
+  @keyframes slideup{from{transform:translateY(100%);}to{transform:translateY(0);}}
+  .dd-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+  .dd-head h3{margin:0;font-size:19px;font-weight:800;}
+  .dd-close{background:#F1ECE0;border:none;width:34px;height:34px;border-radius:50%;font-size:18px;font-weight:800;color:var(--ink);cursor:pointer;}
+  .dd-rate{font-size:13.5px;color:var(--muted);font-weight:700;margin-bottom:14px;}
+  .dd-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);}
+  .dd-row .di{font-size:19px;width:26px;text-align:center;}
+  .dd-row .dn{flex:1;font-size:14.5px;font-weight:700;}
+  .dd-row .dv{font-size:13px;font-weight:800;}
+  .dd-row .dv.ok{color:var(--primary);}
+  .dd-row .dv.no{color:var(--muted);}
+  .dd-empty{text-align:center;color:var(--muted);font-weight:700;padding:24px 0;font-size:14px;}
 </style>
 </head>
 <body>
@@ -211,6 +292,12 @@
     <button onclick="dismissHint()">×</button>
   </div>
 
+  <div class="tabs">
+    <button class="tab on" id="tabToday" onclick="switchView('today')">今日</button>
+    <button class="tab" id="tabHist" onclick="switchView('hist')">カレンダー</button>
+  </div>
+
+  <div class="view on" id="viewToday">
   <header>
     <div class="ring-wrap">
       <svg width="88" height="88" viewBox="0 0 88 88">
@@ -234,6 +321,27 @@
     <button class="reset" onclick="resetToday()">今日の記録をリセット</button>
     <div class="tip">タップするだけで記録できます。<br>日付が変わると自動で新しい一日が始まります。</div>
   </div>
+  </div><!-- /viewToday -->
+
+  <div class="view" id="viewHist">
+    <div class="cal-head">
+      <button class="cal-nav" id="prevM" onclick="moveMonth(-1)">‹</button>
+      <div class="mtitle" id="monthTitle">—</div>
+      <button class="cal-nav" id="nextM" onclick="moveMonth(1)">›</button>
+    </div>
+    <div class="dow"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="legend">
+      <span><i class="lg-dot" style="background:var(--primary)"></i>全部できた</span>
+      <span><i class="lg-dot" style="background:#BFE3D5"></i>途中まで</span>
+      <span><i class="lg-dot" style="background:#fff;border:1.5px solid var(--line)"></i>記録なし</span>
+    </div>
+    <div class="cal-summary">
+      <div><div class="num" id="sumFull">0</div><div class="lbl">全部できた日</div></div>
+      <div><div class="num" id="sumAny">0</div><div class="lbl">取り組んだ日</div></div>
+      <div><div class="num" id="sumRate">0%</div><div class="lbl">この月の達成率</div></div>
+    </div>
+  </div><!-- /viewHist -->
 </div>
 
 <!-- Timer overlay -->
@@ -264,6 +372,18 @@
   <h2>コンプリート！</h2>
   <p id="completeMsg">今日のメニューを全部やりきりました。<br>本当にお疲れさまでした！</p>
   <button class="cbtn" onclick="hideComplete()">とじる</button>
+</div>
+
+<!-- Day detail overlay -->
+<div class="day-detail" id="dayDetail" onclick="if(event.target===this)closeDay()">
+  <div class="dd-card">
+    <div class="dd-head">
+      <h3 id="ddTitle">—</h3>
+      <button class="dd-close" onclick="closeDay()">×</button>
+    </div>
+    <div class="dd-rate" id="ddRate"></div>
+    <div id="ddBody"></div>
+  </div>
 </div>
 
 <script>
@@ -494,6 +614,109 @@ function toggleTimer(){
   },200);
 }
 function closeTimer(){ clearInterval(tInt); tRunning=false; document.getElementById('timerOverlay').classList.remove('show'); }
+
+/* ===== タブ切替 ===== */
+function switchView(v){
+  const today = v==='today';
+  document.getElementById('viewToday').classList.toggle('on',today);
+  document.getElementById('viewHist').classList.toggle('on',!today);
+  document.getElementById('tabToday').classList.toggle('on',today);
+  document.getElementById('tabHist').classList.toggle('on',!today);
+  if(!today) renderCalendar();
+}
+
+/* ===== カレンダー ===== */
+function dayDoneCount(d){
+  if(!d) return 0;
+  let c=0;
+  EXERCISES.forEach(ex=>{
+    if(ex.type==='meal') c+=MEALS.filter(([k])=>d[ex.id]&&d[ex.id][k]).length;
+    else c+=(d[ex.id]||[]).filter(Boolean).length;
+  });
+  return c;
+}
+let calY, calM; // 表示中の年・月(0-11)
+function ymKey(y,m,day){ return y+'-'+String(m+1).padStart(2,'0')+'-'+String(day).padStart(2,'0'); }
+
+function renderCalendar(){
+  const now=new Date();
+  if(calY===undefined){ calY=now.getFullYear(); calM=now.getMonth(); }
+  document.getElementById('monthTitle').textContent=`${calY}年 ${calM+1}月`;
+
+  const first=new Date(calY,calM,1).getDay();      // 0=日
+  const days=new Date(calY,calM+1,0).getDate();    // 月末日
+  const tKey=todayKey();
+  let html='';
+  for(let i=0;i<first;i++) html+='<div class="cell empty"></div>';
+
+  let fullCnt=0, anyCnt=0, doneSum=0;
+  for(let dnum=1; dnum<=days; dnum++){
+    const k=ymKey(calY,calM,dnum);
+    const d=DATA[k];
+    const done=dayDoneCount(d);
+    const isFull=done===TOTAL && done>0;
+    const isFuture=new Date(calY,calM,dnum) > new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    let cls='cell';
+    if(isFuture) cls+=' future';
+    else if(isFull){ cls+=' full'; fullCnt++; anyCnt++; }
+    else if(done>0){ cls+=' partial'; anyCnt++; }
+    if(k===tKey) cls+=' today';
+    doneSum+=done;
+    const tap=isFuture?'':`onclick="openDay('${k}')"`;
+    html+=`<div class="${cls}" ${tap}><div class="dnum">${dnum}</div><div class="ddot"></div></div>`;
+  }
+  document.getElementById('calGrid').innerHTML=html;
+
+  // 月の操作ボタン：未来の月へは行けない
+  const atCurrent = (calY===now.getFullYear() && calM===now.getMonth());
+  document.getElementById('nextM').disabled = atCurrent;
+
+  // サマリー（その月の達成率＝全日数に対する達成ユニット割合）
+  document.getElementById('sumFull').textContent=fullCnt;
+  document.getElementById('sumAny').textContent=anyCnt;
+  const rate=Math.round(doneSum/(days*TOTAL)*100);
+  document.getElementById('sumRate').textContent=rate+'%';
+}
+function moveMonth(dir){
+  calM+=dir;
+  if(calM<0){ calM=11; calY--; }
+  else if(calM>11){ calM=0; calY++; }
+  renderCalendar();
+}
+
+/* ===== 日別詳細 ===== */
+function openDay(k){
+  const d=DATA[k];
+  const [y,m,da]=k.split('-').map(Number);
+  const w=['日','月','火','水','木','金','土'][new Date(y,m-1,da).getDay()];
+  document.getElementById('ddTitle').textContent=`${m}月${da}日（${w}）`;
+  const done=dayDoneCount(d);
+  document.getElementById('ddRate').textContent=`達成 ${done} / ${TOTAL} 項目（${Math.round(done/TOTAL*100)}%）`;
+
+  let body='';
+  if(!d || done===0){
+    body='<div class="dd-empty">この日の記録はありません</div>';
+  } else {
+    EXERCISES.forEach(ex=>{
+      let val,ok;
+      if(ex.type==='meal'){
+        const n=MEALS.filter(([key])=>d[ex.id]&&d[ex.id][key]).length;
+        ok=n===3;
+        val = MEALS.map(([key,lbl])=> (d[ex.id]&&d[ex.id][key])?lbl:`<span style="opacity:.3">${lbl}</span>`).join(' ');
+      } else {
+        const n=(d[ex.id]||[]).filter(Boolean).length;
+        ok=n===ex.sets;
+        val=`${n} / ${ex.sets}セット`;
+      }
+      body+=`<div class="dd-row"><span class="di">${ex.icon}</span>
+        <span class="dn">${ex.name}</span>
+        <span class="dv ${ok?'ok':'no'}">${ok?'✓ ':''}${val}</span></div>`;
+    });
+  }
+  document.getElementById('ddBody').innerHTML=body;
+  document.getElementById('dayDetail').classList.add('show');
+}
+function closeDay(){ document.getElementById('dayDetail').classList.remove('show'); }
 
 /* ===== 日付・初期化 ===== */
 function setDateLine(){

@@ -390,9 +390,11 @@
 /* ===== トレーニング定義 ===== */
 const EXERCISES = [
   {id:'stand',  name:'1分立つ',            type:'meal', icon:'🧍', sub:'毎食後・1分間',     timer:60},
-  {id:'laps',   name:'病棟3周',            type:'meal', icon:'♿', sub:'毎食後・車椅子で3周'},
+  {id:'laps',   name:'病棟4周',            type:'meal', icon:'♿', sub:'毎食後・車椅子で4周'},
+  {id:'heel',   name:'両足かかと上げ',      type:'meal', icon:'👣', sub:'朝・昼・晩 各30回'},
   {id:'ankleUD',name:'右足首の上げ下げ',    type:'sets', icon:'🦶', sets:2, rep:'20回'},
-  {id:'ankleTW',name:'右足首のタオル運動',  type:'sets', icon:'🦶', sets:5, rep:'10秒キープ', timer:10},
+  {id:'ankleTW',name:'右足首のタオル運動',  type:'sets', icon:'🦶', sets:5, rep:'上げ10秒/下げ20秒',
+                interval:[{label:'上げる',sec:10},{label:'下げる',sec:20}], rounds:5},
   {id:'rLeg',   name:'右足の足上げ運動',    type:'sets', icon:'🦵', sets:3, rep:'10回'},
   {id:'lLeg',   name:'左足の足上げ運動',    type:'sets', icon:'🦵', sets:3, rep:'10回'},
   {id:'push',   name:'車椅子プッシュアップ',type:'sets', icon:'💪', sets:3, rep:'10回'},
@@ -469,6 +471,8 @@ function cardHTML(ex){
   if(ex.timer){
     const lbl=ex.timer>=60?(ex.timer/60)+'分':ex.timer+'秒';
     timer=`<div class="timer-btn" data-timer="${ex.id}">⏱ タイマー（${lbl}）</div>`;
+  } else if(ex.interval){
+    timer=`<div class="timer-btn" data-timer="${ex.id}">⏱ ガイド付きタイマー（${ex.rounds}回）</div>`;
   }
   const sub = ex.type==='meal' ? ex.sub : (ex.rep+' × '+ex.sets+'セット');
   return `<div class="card ${done?'done':''}" id="card-${ex.id}">
@@ -574,44 +578,72 @@ function showComplete(){
 }
 function hideComplete(){ document.getElementById('complete').classList.remove('show'); }
 
-/* ===== タイマー ===== */
-let tTotal=0,tLeft=0,tInt=null,tRunning=false;
+/* ===== タイマー（単発・インターバル両対応） ===== */
 const TRING=552.92;
+let phases=[], pIdx=0, pSec=0, tLeft=0, tInt=null, tRunning=false, tFinished=false;
+
+function buildPhases(ex){
+  if(ex.interval){
+    const out=[];
+    for(let r=1;r<=ex.rounds;r++){
+      ex.interval.forEach(p=>out.push({label:`${r}回目・${p.label}`, sec:p.sec, kind:p.label}));
+    }
+    return out;
+  }
+  const lbl = ex.timer>=60 ? (ex.timer/60)+'分間キープ' : ex.timer+'秒間キープ';
+  return [{label:lbl, sec:ex.timer, kind:'keep'}];
+}
 function openTimer(exId){
   const ex=EXERCISES.find(e=>e.id===exId);
-  tTotal=tLeft=ex.timer; tRunning=false; clearInterval(tInt);
+  clearInterval(tInt); tRunning=false; tFinished=false;
+  phases=buildPhases(ex); pIdx=0; pSec=phases[0].sec; tLeft=pSec;
   document.getElementById('tTitle').textContent=ex.name;
-  document.getElementById('tSub').textContent = ex.timer>=60?(ex.timer/60)+'分間キープ':ex.timer+'秒間キープ';
   document.getElementById('tToggle').textContent='スタート';
   paintTimer();
   document.getElementById('timerOverlay').classList.add('show');
 }
 function paintTimer(){
   const num=document.getElementById('tNum');
-  if(tLeft<=0){ num.textContent='おわり！'; num.classList.add('fin'); }
-  else{
+  const sub=document.getElementById('tSub');
+  const ph=phases[pIdx]||{};
+  if(tFinished){
+    num.textContent='おわり！'; num.classList.add('fin');
+    sub.textContent='おつかれさまでした';
+  }else{
     num.classList.remove('fin');
-    num.textContent = tTotal>=60
-      ? Math.floor(tLeft/60)+':'+String(tLeft%60).padStart(2,'0')
-      : tLeft;
+    num.textContent = pSec>=60 ? Math.floor(tLeft/60)+':'+String(tLeft%60).padStart(2,'0') : tLeft;
+    sub.textContent = phases.length>1 ? `${ph.label}（${pIdx+1}/${phases.length}）` : ph.label;
   }
-  const frac = tTotal? tLeft/tTotal : 0;
-  document.getElementById('tRing').style.strokeDashoffset = TRING*(1-frac);
+  const frac = pSec ? tLeft/pSec : 0;
+  const ring=document.getElementById('tRing');
+  ring.style.strokeDashoffset = TRING*(1-frac);
+  ring.style.stroke = (ph.kind && ph.kind.indexOf('下げ')>=0) ? '#E8763C' : '#157C64';
+}
+function tick(){
+  tLeft--;
+  if(tLeft<=0){
+    if(pIdx < phases.length-1){
+      pIdx++; pSec=phases[pIdx].sec; tLeft=pSec;
+      if(navigator.vibrate) navigator.vibrate([220,90,220]); // 上げ→下げ などの切替合図
+      paintTimer();
+    }else{
+      clearInterval(tInt); tRunning=false; tFinished=true;
+      document.getElementById('tToggle').textContent='もう一度';
+      if(navigator.vibrate) navigator.vibrate([120,60,120,60,320]);
+      paintTimer();
+    }
+    return;
+  }
+  paintTimer();
 }
 function toggleTimer(){
-  if(tLeft<=0){ tLeft=tTotal; paintTimer(); }
-  if(tRunning){ tRunning=false; clearInterval(tInt); document.getElementById('tToggle').textContent='再開'; return; }
+  if(tFinished){ tFinished=false; pIdx=0; pSec=phases[0].sec; tLeft=pSec; paintTimer(); }
+  if(tRunning){
+    tRunning=false; clearInterval(tInt);
+    document.getElementById('tToggle').textContent='再開'; return;
+  }
   tRunning=true; document.getElementById('tToggle').textContent='一時停止';
-  const start=Date.now(), base=tLeft;
-  tInt=setInterval(()=>{
-    const el=Math.floor((Date.now()-start)/1000);
-    tLeft=Math.max(0,base-el); paintTimer();
-    if(tLeft<=0){
-      clearInterval(tInt); tRunning=false;
-      document.getElementById('tToggle').textContent='もう一度';
-      if(navigator.vibrate) navigator.vibrate([120,60,120]);
-    }
-  },200);
+  clearInterval(tInt); tInt=setInterval(tick,1000);
 }
 function closeTimer(){ clearInterval(tInt); tRunning=false; document.getElementById('timerOverlay').classList.remove('show'); }
 

@@ -413,7 +413,7 @@ const EXERCISES = [
   {id:'crutch', name:'松葉杖100m歩行',      type:'meal', icon:'🩼', sub:'朝・昼・夜 100m'},
   {id:'ankleUD',name:'右足首の上げ下げ',    type:'sets', icon:'🦶', sets:2, rep:'20回'},
   {id:'ankleTW',name:'右足首のタオル運動',  type:'sets', icon:'🦶', sets:10, rep:'上げ20秒キープ',
-                interval:[{label:'上げる',sec:20}], rounds:10},
+                interval:[{label:'上げる',sec:20}], rounds:10, rest:5},
   {id:'legDown',name:'タオル足下げ',        type:'sets', icon:'🦵', sets:2, rep:'50回'},
   {id:'rLeg',   name:'右足の足上げ運動',    type:'sets', icon:'🦵', sets:3, rep:'10回'},
   {id:'lLeg',   name:'左足の足上げ運動',    type:'sets', icon:'🦵', sets:3, rep:'10回'},
@@ -620,6 +620,7 @@ function buildPhases(ex){
     const out=[];
     for(let r=1;r<=ex.rounds;r++){
       ex.interval.forEach(p=>out.push({label:`${r}回目・${p.label}`, sec:p.sec, kind:p.label}));
+      if(ex.rest && r<ex.rounds) out.push({label:`休憩（つぎは${r+1}回目）`, sec:ex.rest, kind:'rest'});
     }
     return out;
   }
@@ -645,19 +646,22 @@ function paintTimer(){
   }else{
     num.classList.remove('fin');
     num.textContent = pSec>=60 ? Math.floor(tLeft/60)+':'+String(tLeft%60).padStart(2,'0') : tLeft;
-    sub.textContent = phases.length>1 ? `${ph.label}（${pIdx+1}/${phases.length}）` : ph.label;
+    sub.textContent = ph.label;
   }
   const frac = pSec ? tLeft/pSec : 0;
   const ring=document.getElementById('tRing');
   ring.style.strokeDashoffset = TRING*(1-frac);
-  ring.style.stroke = (ph.kind && ph.kind.indexOf('下げ')>=0) ? '#E8763C' : '#157C64';
+  let col='#157C64';                       // 通常（上げる/キープ）＝緑
+  if(ph.kind==='rest') col='#E5B53A';      // 休憩＝ゴールド
+  else if(ph.kind && ph.kind.indexOf('下げ')>=0) col='#E8763C'; // 下げ＝オレンジ
+  ring.style.stroke = col;
 }
 function tick(){
   tLeft--;
   if(tLeft<=0){
     if(pIdx < phases.length-1){
       pIdx++; pSec=phases[pIdx].sec; tLeft=pSec;
-      if(navigator.vibrate) navigator.vibrate([220,90,220]); // 上げ→下げ などの切替合図
+      if(navigator.vibrate) navigator.vibrate(phases[pIdx].kind==='rest' ? [110] : [220,90,220]); // 休憩は短く、運動再開は強め
       paintTimer();
     }else{
       clearInterval(tInt); tRunning=false; tFinished=true;
@@ -814,7 +818,7 @@ function importData(e){
 }
 
 /* ===== バージョン / 更新 ===== */
-const APP_VERSION='4';   // アプリを更新したら数字を増やす
+const APP_VERSION='5';   // アプリを更新したら数字を増やす
 async function checkUpdate(){
   try{
     if('serviceWorker' in navigator){

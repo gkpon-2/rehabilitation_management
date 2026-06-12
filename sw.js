@@ -1,5 +1,5 @@
 // 更新するたびにこの数字を増やしてください（v4 → v5 ...）
-const CACHE = 'rehab-v4';
+const CACHE = 'rehab-v5';
 const ASSETS = [
   './',
   './index.html',

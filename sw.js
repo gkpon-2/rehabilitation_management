@@ -1,5 +1,5 @@
-// 更新するたびにこの数字を増やしてください（v4 → v5 ...）
-const CACHE = 'rehab-v5';
+// 更新するたびにこの数字を増やしてください（index.htmlのAPP_VERSION・version.jsonと合わせる）
+const CACHE = 'rehab-v6';
 const ASSETS = [
   './',
   './index.html',
@@ -28,11 +28,16 @@ self.addEventListener('message', (e) => {
   if (e.data === 'skipWaiting') self.skipWaiting();
 });
 
-// ネット優先・失敗時のみキャッシュ（更新を取りこぼしにくい）
+// ネット優先・失敗時のみキャッシュ
+// ページ本体(HTML)とversion.jsonはHTTPキャッシュも飛ばして常に最新を取りに行く
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  const isPage = e.request.mode === 'navigate'
+    || e.request.url.includes('index.html')
+    || e.request.url.includes('version.json');
+  const req = isPage ? new Request(e.request.url, { cache: 'no-store' }) : e.request;
   e.respondWith(
-    fetch(e.request)
+    fetch(req)
       .then((res) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});

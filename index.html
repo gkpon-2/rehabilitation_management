@@ -818,7 +818,7 @@ function importData(e){
 }
 
 /* ===== バージョン / 更新 ===== */
-const APP_VERSION='5';   // アプリを更新したら数字を増やす
+const APP_VERSION='6';   // アプリを更新したら version.json と sw.js も合わせて増やす
 async function checkUpdate(){
   try{
     if('serviceWorker' in navigator){
@@ -827,6 +827,37 @@ async function checkUpdate(){
     }
   }catch(e){}
   location.reload();
+}
+
+/* ===== 自動アップデート =====
+   iPhoneのPWAは開き直しても前回の画面を復元するだけで再読み込みされないことがある。
+   そこで「起動時」と「アプリが前面に戻ったとき」に version.json をキャッシュ無視で確認し、
+   新しいバージョンが見つかったら自動で再読み込みして最新化する。 */
+let updateChecking=false;
+async function autoUpdateCheck(){
+  if(updateChecking) return; updateChecking=true;
+  try{
+    const res=await fetch('version.json?t='+Date.now(), {cache:'no-store'});
+    if(res.ok){
+      const v=(await res.json()).version;
+      if(v && v!==APP_VERSION){
+        // 無限リロード防止：同じ版への再読み込みは2回まで
+        const tries=+(sessionStorage.getItem('updTries')||0);
+        if(tries<2){
+          sessionStorage.setItem('updTries', tries+1);
+          try{
+            const reg=await navigator.serviceWorker.getRegistration();
+            if(reg) await reg.update();
+          }catch(e){}
+          location.reload();
+          return;
+        }
+      }else{
+        sessionStorage.removeItem('updTries');
+      }
+    }
+  }catch(e){ /* オフライン時は何もしない */ }
+  updateChecking=false;
 }
 
 /* ===== 日付・初期化 ===== */
@@ -849,6 +880,15 @@ document.getElementById('appVer').textContent = APP_VERSION;
 wasComplete = (countDone()===TOTAL);   // 既に完了済みの日を開いただけでは演出を出さない
 render();
 
+// 起動時に新版チェック
+autoUpdateCheck();
+// アプリが前面に戻ったら：日付の切り替え＆新版チェック（PWAが再読み込みされない対策の本丸）
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'){
+    if(todayKey()!==TKEY){ location.reload(); return; }
+    autoUpdateCheck();
+  }
+});
 // 日付が変わったら自動更新（アプリを開きっぱなしでも）
 setInterval(()=>{ if(todayKey()!==TKEY) location.reload(); }, 60000);
 
@@ -861,7 +901,8 @@ if('serviceWorker' in navigator){
   });
   window.addEventListener('load', async ()=>{
     try{
-      const reg=await navigator.serviceWorker.register('sw.js');
+      // updateViaCache:'none' … sw.js自体をHTTPキャッシュに頼らず確認する
+      const reg=await navigator.serviceWorker.register('sw.js', {updateViaCache:'none'});
       reg.update();                       // 起動のたびに新版を確認
       // 念のため：待機中の新SWがあればすぐ有効化
       if(reg.waiting) reg.waiting.postMessage('skipWaiting');

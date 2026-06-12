@@ -140,6 +140,14 @@
     text-decoration:underline;cursor:pointer;padding:8px;
   }
   .tip{font-size:12px;color:var(--muted);margin-top:14px;text-align:center;line-height:1.7;}
+  .data-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:var(--shadow);margin-bottom:18px;}
+  .data-title{font-size:14.5px;font-weight:800;}
+  .data-desc{font-size:12px;color:var(--muted);font-weight:600;line-height:1.7;margin:6px 0 12px;}
+  .data-btns{display:flex;gap:10px;}
+  .dbtn{flex:1;border:1.5px solid var(--primary);background:#fff;color:var(--primary-d);border-radius:12px;padding:11px;font-size:13.5px;font-weight:800;cursor:pointer;}
+  .dbtn:active{transform:scale(.97);background:#F2F8F5;}
+  .ver{font-size:11.5px;color:var(--muted);margin-top:14px;text-align:center;font-weight:700;}
+  .ver a{color:var(--primary-d);font-weight:800;}
 
   /* ---------- Timer overlay ---------- */
   .overlay{
@@ -318,8 +326,18 @@
   <div id="list"></div>
 
   <div class="foot">
+    <div class="data-box">
+      <div class="data-title">📦 記録のバックアップ</div>
+      <div class="data-desc">ホーム画面のアプリを削除すると記録も消えます。ときどき書き出して保存しておくと安心です。</div>
+      <div class="data-btns">
+        <button class="dbtn" onclick="exportData()">書き出す（保存）</button>
+        <button class="dbtn" onclick="document.getElementById('importFile').click()">読み込む（復元）</button>
+      </div>
+      <input type="file" id="importFile" accept="application/json,.json" style="display:none" onchange="importData(event)" />
+    </div>
     <button class="reset" onclick="resetToday()">今日の記録をリセット</button>
-    <div class="tip">タップするだけで記録できます。<br>日付が変わると自動で新しい一日が始まります。</div>
+    <div class="tip">タップするだけで記録できます。日付が変わると自動で新しい一日が始まります。</div>
+    <div class="ver">バージョン <span id="appVer">—</span> ・ <a href="#" onclick="checkUpdate();return false;">最新に更新</a></div>
   </div>
   </div><!-- /viewToday -->
 
@@ -392,14 +410,14 @@ const EXERCISES = [
   {id:'stand',  name:'1分立つ',            type:'meal', icon:'🧍', sub:'毎食後・1分間',     timer:60},
   {id:'laps',   name:'病棟4周',            type:'meal', icon:'♿', sub:'毎食後・車椅子で4周'},
   {id:'heel',   name:'両足かかと上げ',      type:'meal', icon:'👣', sub:'朝・昼・晩 各30回'},
+  {id:'crutch', name:'松葉杖100m歩行',      type:'meal', icon:'🩼', sub:'朝・昼・夜 100m'},
   {id:'ankleUD',name:'右足首の上げ下げ',    type:'sets', icon:'🦶', sets:2, rep:'20回'},
-  {id:'ankleTW',name:'右足首のタオル運動',  type:'sets', icon:'🦶', sets:5, rep:'上げ10秒/下げ20秒',
-                interval:[{label:'上げる',sec:10},{label:'下げる',sec:20}], rounds:5},
+  {id:'ankleTW',name:'右足首のタオル運動',  type:'sets', icon:'🦶', sets:10, rep:'上げ20秒キープ',
+                interval:[{label:'上げる',sec:20}], rounds:10},
+  {id:'legDown',name:'タオル足下げ',        type:'sets', icon:'🦵', sets:2, rep:'50回'},
   {id:'rLeg',   name:'右足の足上げ運動',    type:'sets', icon:'🦵', sets:3, rep:'10回'},
   {id:'lLeg',   name:'左足の足上げ運動',    type:'sets', icon:'🦵', sets:3, rep:'10回'},
   {id:'push',   name:'車椅子プッシュアップ',type:'sets', icon:'💪', sets:3, rep:'10回'},
-  {id:'rGrip',  name:'右手のタオルにぎり',  type:'sets', icon:'✊', sets:2, rep:'10回'},
-  {id:'lGrip',  name:'左手のタオルにぎり',  type:'sets', icon:'✊', sets:2, rep:'10回'},
 ];
 const MEALS = [['m','朝'],['n','昼'],['e','夜']];
 
@@ -419,10 +437,25 @@ function blankDay(){
   });
   return day;
 }
+// 古い形のデータでも現メニューに合わせて壊れないよう整える（今日のデータのみ）
+function ensureShape(d){
+  EXERCISES.forEach(ex=>{
+    if(ex.type==='meal'){
+      if(!d[ex.id] || typeof d[ex.id]!=='object') d[ex.id]={m:false,n:false,e:false};
+      else { d[ex.id].m=!!d[ex.id].m; d[ex.id].n=!!d[ex.id].n; d[ex.id].e=!!d[ex.id].e; }
+    } else {
+      if(!Array.isArray(d[ex.id])) d[ex.id]=new Array(ex.sets).fill(false);
+      else if(d[ex.id].length<ex.sets){ while(d[ex.id].length<ex.sets) d[ex.id].push(false); }
+      else if(d[ex.id].length>ex.sets){ d[ex.id]=d[ex.id].slice(0,ex.sets); }
+    }
+  });
+  return d;
+}
 let DATA=loadAll();
 const TKEY=todayKey();
 if(!DATA[TKEY]) DATA[TKEY]=blankDay();
-let day=DATA[TKEY];
+let day=ensureShape(DATA[TKEY]);
+saveAll(DATA);
 
 /* 合計ユニット数 */
 const TOTAL=EXERCISES.reduce((s,ex)=>s+(ex.type==='meal'?3:ex.sets),0);
@@ -750,6 +783,48 @@ function openDay(k){
 }
 function closeDay(){ document.getElementById('dayDetail').classList.remove('show'); }
 
+/* ===== バックアップ / 復元 ===== */
+function exportData(){
+  try{
+    const blob=new Blob([JSON.stringify(DATA)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=`rehab-backup-${todayKey()}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+  }catch(e){ alert('書き出しに失敗しました。'); }
+}
+function importData(e){
+  const f=e.target.files && e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const obj=JSON.parse(r.result);
+      if(!obj || typeof obj!=='object' || Array.isArray(obj)) throw 0;
+      let added=0;
+      // 日付ごとに復元。同じ日付はバックアップ側で上書き、無い日はそのまま追加
+      Object.keys(obj).forEach(k=>{ DATA[k]=obj[k]; added++; });
+      saveAll(DATA);
+      alert(`復元しました（${added}日分）。画面を更新します。`);
+      location.reload();
+    }catch(err){ alert('このファイルは読み込めませんでした。バックアップで書き出したJSONを選んでください。'); }
+    finally{ e.target.value=''; }
+  };
+  r.readAsText(f);
+}
+
+/* ===== バージョン / 更新 ===== */
+const APP_VERSION='4';   // アプリを更新したら数字を増やす
+async function checkUpdate(){
+  try{
+    if('serviceWorker' in navigator){
+      const reg=await navigator.serviceWorker.getRegistration();
+      if(reg) await reg.update();
+    }
+  }catch(e){}
+  location.reload();
+}
+
 /* ===== 日付・初期化 ===== */
 function setDateLine(){
   const d=new Date(); const w=['日','月','火','水','木','金','土'][d.getDay()];
@@ -766,15 +841,37 @@ function dismissHint(){ document.getElementById('installHint').style.display='no
 })();
 
 setDateLine();
+document.getElementById('appVer').textContent = APP_VERSION;
 wasComplete = (countDone()===TOTAL);   // 既に完了済みの日を開いただけでは演出を出さない
 render();
 
 // 日付が変わったら自動更新（アプリを開きっぱなしでも）
 setInterval(()=>{ if(todayKey()!==TKEY) location.reload(); }, 60000);
 
-// Service Worker 登録（オフライン対応）
+// Service Worker 登録（オフライン対応＋新版を自動反映）
 if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  let reloaded=false;
+  // 新しいSWが有効になったら一度だけ自動リロード＝更新が確実に反映される
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(reloaded) return; reloaded=true; location.reload();
+  });
+  window.addEventListener('load', async ()=>{
+    try{
+      const reg=await navigator.serviceWorker.register('sw.js');
+      reg.update();                       // 起動のたびに新版を確認
+      // 念のため：待機中の新SWがあればすぐ有効化
+      if(reg.waiting) reg.waiting.postMessage('skipWaiting');
+      reg.addEventListener('updatefound',()=>{
+        const nw=reg.installing;
+        if(!nw) return;
+        nw.addEventListener('statechange',()=>{
+          if(nw.state==='installed' && navigator.serviceWorker.controller){
+            nw.postMessage('skipWaiting');
+          }
+        });
+      });
+    }catch(e){}
+  });
 }
 </script>
 </body>

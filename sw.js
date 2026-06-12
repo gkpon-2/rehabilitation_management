@@ -1,5 +1,5 @@
-// バージョンを上げるとキャッシュが更新されます（アプリを更新したいとき数字を変える）
-const CACHE = 'rehab-v3';
+// 更新するたびにこの数字を増やしてください（v4 → v5 ...）
+const CACHE = 'rehab-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -12,19 +12,23 @@ const ASSETS = [
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)));
-  self.skipWaiting();
+  self.skipWaiting();           // 新版をすぐ待機解除
 });
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    )
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())   // すぐ操作権を取る＝開いている画面に即反映
   );
-  self.clients.claim();
 });
 
-// ネット優先・失敗したらキャッシュ（更新を取りこぼしにくい）
+// ページからの依頼で即時有効化（更新の取りこぼし防止）
+self.addEventListener('message', (e) => {
+  if (e.data === 'skipWaiting') self.skipWaiting();
+});
+
+// ネット優先・失敗時のみキャッシュ（更新を取りこぼしにくい）
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
   e.respondWith(

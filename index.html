@@ -411,6 +411,7 @@ const EXERCISES = [
   {id:'laps',   name:'病棟4周',            type:'meal', icon:'♿', sub:'毎食後・車椅子で4周'},
   {id:'heel',   name:'両足かかと上げ',      type:'meal', icon:'👣', sub:'朝・昼・晩 各30回'},
   {id:'crutch', name:'松葉杖100m歩行',      type:'meal', icon:'🩼', sub:'朝・昼・夜 100m'},
+  {id:'knee',   name:'膝曲げ',              type:'meal', icon:'🦵', sub:'朝・昼・夜 20回'},
   {id:'ankleUD',name:'右足首の上げ下げ',    type:'sets', icon:'🦶', sets:2, rep:'20回'},
   {id:'ankleTW',name:'右足首のタオル運動',  type:'sets', icon:'🦶', sets:10, rep:'上げ20秒キープ',
                 interval:[{label:'上げる',sec:20}], rounds:10, rest:5},
@@ -818,7 +819,7 @@ function importData(e){
 }
 
 /* ===== バージョン / 更新 ===== */
-const APP_VERSION='6';   // アプリを更新したら version.json と sw.js も合わせて増やす
+const APP_VERSION='7';   // アプリを更新したら version.json と sw.js も合わせて増やす
 async function checkUpdate(){
   try{
     if('serviceWorker' in navigator){

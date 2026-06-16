@@ -419,6 +419,9 @@ const EXERCISES = [
   {id:'rLeg',   name:'右足の足上げ運動',    type:'sets', icon:'🦵', sets:3, rep:'10回'},
   {id:'lLeg',   name:'左足の足上げ運動',    type:'sets', icon:'🦵', sets:3, rep:'10回'},
   {id:'push',   name:'車椅子プッシュアップ',type:'sets', icon:'💪', sets:3, rep:'10回'},
+  {id:'toeGrab',name:'足指タオル掴み',      type:'sets', icon:'🦶', sets:3, rep:'10回'},
+  {id:'ball',   name:'足裏ボール転がし',    type:'sets', icon:'🎾', sets:1, rep:'10分',
+                timer:600, timerLabel:'10分間ころがす'},
 ];
 const MEALS = [['m','朝'],['n','昼'],['e','夜']];
 
@@ -625,7 +628,7 @@ function buildPhases(ex){
     }
     return out;
   }
-  const lbl = ex.timer>=60 ? (ex.timer/60)+'分間キープ' : ex.timer+'秒間キープ';
+  const lbl = ex.timerLabel ? ex.timerLabel : (ex.timer>=60 ? (ex.timer/60)+'分間キープ' : ex.timer+'秒間キープ');
   return [{label:lbl, sec:ex.timer, kind:'keep'}];
 }
 function openTimer(exId){
@@ -819,7 +822,7 @@ function importData(e){
 }
 
 /* ===== バージョン / 更新 ===== */
-const APP_VERSION='7';   // アプリを更新したら version.json と sw.js も合わせて増やす
+const APP_VERSION='8';   // アプリを更新したら version.json と sw.js も合わせて増やす
 async function checkUpdate(){
   try{
     if('serviceWorker' in navigator){

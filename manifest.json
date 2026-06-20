@@ -1,7 +1,7 @@
 {
-  "name": "リハビリ自主トレ",
-  "short_name": "自主トレ",
-  "description": "入院中の自主トレを毎日管理するアプリ",
+  "name": "つづけるリハ",
+  "short_name": "つづけるリハ",
+  "description": "続けたいリハビリ・運動を自分で登録して、毎日の達成を記録するアプリ",
   "lang": "ja",
   "start_url": "./index.html",
   "scope": "./",

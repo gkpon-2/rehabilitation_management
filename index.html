@@ -467,21 +467,26 @@
     <div class="fld"><label>タイトル</label><input id="mName" placeholder="例：右足の足上げ運動"/></div>
     <div class="fld"><label>アイコン（任意）</label><div class="emoji-pick" id="mEmoji"></div></div>
     <div class="fld"><label>セクション</label><select id="mSec"></select></div>
-    <div class="fld"><label>種類（頻度）</label><select id="mType" onchange="updateModalFields()">
+    <div class="fld"><label>頻度</label><select id="mType" onchange="updateModalFields()">
       <option value="m3">朝・昼・夜</option>
       <option value="m2">朝・夜</option>
       <option value="dN">1日に〇回</option>
-      <option value="repsets">〇回 × 〇セット</option>
-      <option value="seckeep">〇秒キープ × 〇セット（タイマー付き）</option>
-      <option value="timer">タイマーだけ（分・秒）</option>
+      <option value="sets">〇回（秒）× 〇セット</option>
     </select></div>
     <div class="fld" id="fDN" style="display:none"><label>1日の回数</label><input id="mDN" type="number" min="1" value="3"/></div>
-    <div class="fld row" id="fRepSets" style="display:none"><div><label>回数</label><input id="mReps" type="number" min="1" value="10"/></div><div><label>セット数</label><input id="mSets" type="number" min="1" value="3"/></div></div>
-    <div id="fSecKeep" style="display:none">
-      <div class="fld row"><div><label>秒数（キープ）</label><input id="mSec2" type="number" min="1" value="20"/></div><div><label>セット数</label><input id="mSetsK" type="number" min="1" value="10"/></div></div>
-      <div class="fld"><label>セット間の休憩（秒・任意）</label><input id="mRest" type="number" min="0" value="5"/><div class="mini">タイマーが上げ→休憩→…と自動で進みます。</div></div>
+    <div id="fSets" style="display:none">
+      <div class="fld row"><div><label>1セットの量</label><input id="mReps" type="number" min="1" value="10"/></div><div><label>単位</label><select id="mUnit"><option value="回">回</option><option value="秒">秒</option></select></div><div><label>セット数</label><input id="mSets" type="number" min="1" value="3"/></div></div>
     </div>
-    <div class="fld row" id="fTimer" style="display:none"><div><label>分</label><input id="mMin" type="number" min="0" value="10"/></div><div><label>秒</label><input id="mSecOnly" type="number" min="0" value="0"/></div></div>
+    <div class="fld"><label>⏱ タイマー</label><select id="mTimer" onchange="updateModalFields()">
+      <option value="none">なし</option>
+      <option value="single">つける（1回ぶんを計る）</option>
+      <option value="interval" id="optInterval">つける（セットごとに計る・休憩あり）</option>
+    </select></div>
+    <div class="fld row" id="fTimerSingle" style="display:none"><div><label>分</label><input id="mMin" type="number" min="0" value="1"/></div><div><label>秒</label><input id="mSecOnly" type="number" min="0" value="0"/></div></div>
+    <div id="fTimerInterval" style="display:none">
+      <div class="fld row"><div><label>1セットの秒数</label><input id="mKeep" type="number" min="1" value="20"/></div><div><label>セット間の休憩（秒）</label><input id="mRest" type="number" min="0" value="5"/></div></div>
+      <div class="mini">「頻度」のセット数ぶん、キープ→休憩→…と自動で進みます。</div>
+    </div>
     <div class="fld"><label>メモ（任意）</label><input id="mNote" placeholder="例：100m ／ 各30回 など"/></div>
     <div class="modal-btns"><button class="mbtn ghost" onclick="closeModal()">キャンセル</button><button class="mbtn primary" onclick="saveModal()">保存</button></div>
   </div>
@@ -912,52 +917,61 @@ function dragEnd(){
 var EMOJIS=['🦶','🦵','💪','🧍','♿','🩼','👣','🎾','✊','🙆','🤸','🚶','🪑','❤️','⏱'];
 var editingItem=null,modalSecId=null,pickedEmoji='';
 function openModal(mi,secId){
-  editingItem=mi||null;modalSecId=secId||MENU.sections[0].id;
+  editingItem=mi||null;modalSecId=secId||(MENU.sections[0]&&MENU.sections[0].id);
   document.getElementById('mTitle').textContent=mi?'項目を編集':'項目を追加';
   document.getElementById('mName').value=mi?mi.title:'';
   document.getElementById('mNote').value=mi?(mi.note||''):'';
   pickedEmoji=mi?(mi.icon||''):'';
-  // emoji picker
   var ep=document.getElementById('mEmoji');ep.innerHTML=EMOJIS.map(function(e){return '<button type="button" data-e="'+e+'" class="'+(e===pickedEmoji?'on':'')+'">'+e+'</button>';}).join('');
   ep.querySelectorAll('button').forEach(function(b){b.onclick=function(){pickedEmoji=b.dataset.e;ep.querySelectorAll('button').forEach(function(x){x.classList.toggle('on',x.dataset.e===pickedEmoji);});};});
-  // sections
   var ss=document.getElementById('mSec');ss.innerHTML=MENU.sections.map(function(s){return '<option value="'+s.id+'"'+(s.id===modalSecId?' selected':'')+'>'+esc(s.title)+'</option>';}).join('');
-  // type + fields
-  var type='repsets';
+  // 頻度の既定値
+  var type='m3', timer='none';
+  // フィールド初期値
+  document.getElementById('mDN').value=3;
+  document.getElementById('mReps').value=10;document.getElementById('mUnit').value='回';document.getElementById('mSets').value=3;
+  document.getElementById('mMin').value=1;document.getElementById('mSecOnly').value=0;
+  document.getElementById('mKeep').value=20;document.getElementById('mRest').value=5;
   if(mi){
     if(mi.kind==='slots'){type=(mi.labels.length===3&&mi.labels[0]==='朝')?'m3':(mi.labels.length===2&&mi.labels[0]==='朝')?'m2':'dN';if(type==='dN')document.getElementById('mDN').value=mi.labels.length;}
-    else{if(mi.unit==='timer')type='timer';else if(mi.timerKind==='interval')type='seckeep';else type='repsets';}
-    if(type==='repsets'){document.getElementById('mReps').value=mi.count||10;document.getElementById('mSets').value=mi.sets||3;}
-    if(type==='seckeep'){document.getElementById('mSec2').value=mi.timerSec||20;document.getElementById('mSetsK').value=mi.sets||10;document.getElementById('mRest').value=mi.restSec||0;}
-    if(type==='timer'){document.getElementById('mMin').value=Math.floor((mi.timerSec||0)/60);document.getElementById('mSecOnly').value=(mi.timerSec||0)%60;}
+    else{type='sets';document.getElementById('mReps').value=mi.count||10;document.getElementById('mUnit').value=(mi.unit==='秒'?'秒':'回');document.getElementById('mSets').value=mi.sets||3;}
+    timer=mi.timerKind||'none';
+    if(timer==='single'){document.getElementById('mMin').value=Math.floor((mi.timerSec||0)/60);document.getElementById('mSecOnly').value=(mi.timerSec||0)%60;}
+    if(timer==='interval'){document.getElementById('mKeep').value=mi.timerSec||20;document.getElementById('mRest').value=mi.restSec||0;}
   }
   document.getElementById('mType').value=type;
+  document.getElementById('mTimer').value=timer;
   updateModalFields();
   document.getElementById('itemModal').classList.add('show');
 }
 function updateModalFields(){
-  var t=document.getElementById('mType').value;
+  var t=document.getElementById('mType').value, tm=document.getElementById('mTimer').value;
   document.getElementById('fDN').style.display=t==='dN'?'':'none';
-  document.getElementById('fRepSets').style.display=t==='repsets'?'':'none';
-  document.getElementById('fSecKeep').style.display=t==='seckeep'?'':'none';
-  document.getElementById('fTimer').style.display=t==='timer'?'':'none';
+  document.getElementById('fSets').style.display=t==='sets'?'':'none';
+  // インターバルタイマーは「セット系」のときだけ選べる
+  var opt=document.getElementById('optInterval'), sel=document.getElementById('mTimer');
+  if(t==='sets'){opt.disabled=false;opt.style.display='';}
+  else{opt.disabled=true;opt.style.display='none';if(sel.value==='interval'){sel.value='none';tm='none';}}
+  document.getElementById('fTimerSingle').style.display=tm==='single'?'':'none';
+  document.getElementById('fTimerInterval').style.display=tm==='interval'?'':'none';
 }
 function closeModal(){document.getElementById('itemModal').classList.remove('show');editingItem=null;}
 function saveModal(){
   var title=document.getElementById('mName').value.trim();
   if(!title){alert('タイトルを入力してください。');return;}
-  var t=document.getElementById('mType').value,secId=document.getElementById('mSec').value,note=document.getElementById('mNote').value.trim();
+  var t=document.getElementById('mType').value,tm=document.getElementById('mTimer').value;
+  var secId=document.getElementById('mSec').value,note=document.getElementById('mNote').value.trim();
   var id=editingItem?editingItem.id:uid('it_');
   var mi={id:id,title:title,icon:pickedEmoji,sectionId:secId,note:note,timerKind:'none',timerSec:0,restSec:0};
   function num(idn,min,def){var v=parseInt(document.getElementById(idn).value,10);if(isNaN(v))v=def;if(v<min)v=min;return v;}
+  // 頻度
   if(t==='m3'){mi.kind='slots';mi.labels=['朝','昼','夜'];}
   else if(t==='m2'){mi.kind='slots';mi.labels=['朝','夜'];}
   else if(t==='dN'){var n=num('mDN',1,3);mi.kind='slots';mi.labels=[];for(var i=1;i<=n;i++)mi.labels.push(String(i));}
-  else if(t==='repsets'){mi.kind='sets';mi.unit='回';mi.count=num('mReps',1,10);mi.sets=num('mSets',1,3);}
-  else if(t==='seckeep'){mi.kind='sets';mi.unit='秒';mi.count=num('mSec2',1,20);mi.timerSec=mi.count;mi.sets=num('mSetsK',1,10);mi.restSec=num('mRest',0,0);mi.timerKind='interval';}
-  else if(t==='timer'){mi.kind='sets';mi.unit='timer';mi.sets=1;mi.count=0;mi.timerSec=num('mMin',0,0)*60+num('mSecOnly',0,0);mi.timerKind='single';if(mi.timerSec<1)mi.timerSec=1;}
-  // 朝昼夜などスロット型で、元々ボタン式タイマー（例：1分立つ）があった場合は引き継ぐ
-  if(mi.kind==='slots'&&editingItem&&editingItem.kind==='slots'&&editingItem.timerKind==='single'){mi.timerKind='single';mi.timerSec=editingItem.timerSec;}
+  else{mi.kind='sets';mi.unit=document.getElementById('mUnit').value;mi.count=num('mReps',1,10);mi.sets=num('mSets',1,3);}
+  // タイマー（頻度から独立）
+  if(tm==='single'){mi.timerKind='single';mi.timerSec=num('mMin',0,0)*60+num('mSecOnly',0,0);if(mi.timerSec<1)mi.timerSec=1;}
+  else if(tm==='interval'&&mi.kind==='sets'){mi.timerKind='interval';mi.timerSec=num('mKeep',1,20);mi.restSec=num('mRest',0,5);}
   if(editingItem){var idx=MENU.items.findIndex(function(x){return x.id===id;});MENU.items[idx]=mi;}
   else MENU.items.push(mi);
   saveMenu();closeModal();renderEdit();
@@ -991,7 +1005,7 @@ function importData(e){
 }
 
 /* ====== バージョン / 自動更新 ====== */
-var APP_VERSION='10';
+var APP_VERSION='11';
 function checkUpdate(){
   (async function(){try{if('serviceWorker' in navigator){var reg=await navigator.serviceWorker.getRegistration();if(reg)await reg.update();}}catch(e){}location.reload();})();
 }

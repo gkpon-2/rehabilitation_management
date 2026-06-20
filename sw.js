@@ -1,5 +1,5 @@
 // 更新するたびにこの数字を増やしてください（index.htmlのAPP_VERSION・version.jsonと合わせる）
-const CACHE = 'rehab-v8';
+const CACHE = 'rehab-v9';
 const ASSETS = [
   './',
   './index.html',

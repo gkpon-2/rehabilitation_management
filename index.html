@@ -290,6 +290,50 @@
   .dd-row .dv.ok{color:var(--primary);}
   .dd-row .dv.no{color:var(--muted);}
   .dd-empty{text-align:center;color:var(--muted);font-weight:700;padding:24px 0;font-size:14px;}
+
+  /* ---------- 編集モード / エディタ ---------- */
+  .edit-toggle{display:flex;justify-content:flex-end;margin:-6px 2px 10px;}
+  .edit-toggle button{background:none;border:none;color:var(--primary-d);font-size:14px;font-weight:800;cursor:pointer;padding:6px 8px;border-radius:10px;}
+  .edit-toggle button.on{background:var(--primary);color:#fff;}
+  .sec-edit{display:flex;align-items:center;gap:8px;margin:22px 2px 10px;}
+  .sec-edit .sec-handle{cursor:grab;color:var(--muted);font-size:18px;touch-action:none;padding:2px 4px;}
+  .sec-edit input{flex:1;border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:14.5px;font-weight:800;font-family:inherit;background:#fff;color:var(--ink);}
+  .sec-edit .sdel{background:none;border:none;color:#C9605A;font-size:13px;font-weight:800;cursor:pointer;padding:4px;}
+  .erow{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:9px;box-shadow:var(--shadow);}
+  .erow.dragging{opacity:.5;}
+  .erow.drop-target{border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-soft);}
+  .erow .handle{cursor:grab;color:var(--muted);font-size:20px;flex:none;touch-action:none;padding:0 2px;}
+  .erow .ei{font-size:20px;width:26px;text-align:center;flex:none;}
+  .erow .et{flex:1;min-width:0;}
+  .erow .et .nm{font-size:14.5px;font-weight:800;}
+  .erow .et .fq{font-size:11.5px;color:var(--muted);font-weight:700;margin-top:2px;}
+  .erow .ebtn{background:none;border:none;font-size:16px;cursor:pointer;padding:4px;flex:none;}
+  .erow .ebtn.del{color:#C9605A;}
+  .add-item-btn{width:100%;border:1.5px dashed var(--primary);background:#fff;color:var(--primary-d);border-radius:12px;padding:11px;font-size:13.5px;font-weight:800;cursor:pointer;margin-bottom:6px;}
+  .add-sec-btn{width:100%;border:1.5px solid var(--line);background:#fff;color:var(--ink);border-radius:12px;padding:13px;font-size:14px;font-weight:800;cursor:pointer;margin-top:18px;}
+  .edit-tip{font-size:12px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.7;font-weight:600;}
+
+  /* item editor modal */
+  .modal{position:fixed;inset:0;z-index:70;display:none;align-items:flex-end;justify-content:center;background:rgba(20,30,28,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
+  .modal.show{display:flex;animation:fade .2s;}
+  .modal-card{background:var(--surface);width:100%;max-width:560px;border-radius:26px 26px 0 0;padding:20px 18px calc(var(--safe-bot) + 22px);box-shadow:var(--shadow-lg);max-height:88vh;overflow-y:auto;animation:slideup .3s cubic-bezier(.2,.9,.3,1);}
+  .modal-card h3{margin:0 0 16px;font-size:18px;font-weight:800;}
+  .fld{margin-bottom:14px;}
+  .fld label{display:block;font-size:12.5px;font-weight:800;color:var(--muted);margin-bottom:6px;}
+  .fld input,.fld select{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:15px;font-family:inherit;background:#fff;color:var(--ink);}
+  .fld.row{display:flex;gap:10px;}
+  .fld.row>div{flex:1;}
+  .mini{font-size:11px;color:var(--muted);font-weight:600;margin-top:5px;line-height:1.6;}
+  .modal-btns{display:flex;gap:10px;margin-top:8px;}
+  .mbtn{flex:1;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:800;cursor:pointer;}
+  .mbtn.primary{background:var(--primary);color:#fff;}
+  .mbtn.ghost{background:#F1ECE0;color:var(--ink);}
+  .mbtn:active{transform:scale(.98);}
+  .emoji-pick{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px;}
+  .emoji-pick button{width:40px;height:40px;border:1px solid var(--line);background:#fff;border-radius:11px;font-size:20px;cursor:pointer;}
+  .emoji-pick button.on{border-color:var(--primary);background:var(--primary-soft);}
+  .erow.dragging{pointer-events:none;}
+  .sec-edit.dragging{pointer-events:none;opacity:.5;}
 </style>
 </head>
 <body>
@@ -323,12 +367,14 @@
     </div>
   </header>
 
+  <div class="edit-toggle"><button id="editBtn" onclick="toggleEdit()">✎ 項目を編集</button></div>
+
   <div id="list"></div>
 
-  <div class="foot">
+  <div class="foot" id="footBox">
     <div class="data-box">
       <div class="data-title">📦 記録のバックアップ</div>
-      <div class="data-desc">ホーム画面のアプリを削除すると記録も消えます。ときどき書き出して保存しておくと安心です。</div>
+      <div class="data-desc">ホーム画面のアプリを削除すると記録も消えます。ときどき書き出して保存しておくと安心です。メニュー設定も一緒に保存されます。</div>
       <div class="data-btns">
         <button class="dbtn" onclick="exportData()">書き出す（保存）</button>
         <button class="dbtn" onclick="document.getElementById('importFile').click()">読み込む（復元）</button>
@@ -404,521 +450,558 @@
   </div>
 </div>
 
-<script>
-/* ===== トレーニング定義 ===== */
-const EXERCISES = [
-  {id:'stand',  name:'1分立つ',            type:'meal', icon:'🧍', sub:'毎食後・1分間',     timer:60},
-  {id:'laps',   name:'病棟4周',            type:'meal', icon:'♿', sub:'毎食後・車椅子で4周'},
-  {id:'heel',   name:'両足かかと上げ',      type:'meal', icon:'👣', sub:'朝・昼・晩 各30回'},
-  {id:'crutch', name:'松葉杖100m歩行',      type:'meal', icon:'🩼', sub:'朝・昼・夜 100m'},
-  {id:'knee',   name:'膝曲げ',              type:'meal', icon:'🦵', sub:'朝・昼・夜 20回'},
-  {id:'ankleUD',name:'右足首の上げ下げ',    type:'sets', icon:'🦶', sets:2, rep:'20回'},
-  {id:'ankleTW',name:'右足首のタオル運動',  type:'sets', icon:'🦶', sets:10, rep:'上げ20秒キープ',
-                interval:[{label:'上げる',sec:20}], rounds:10, rest:5},
-  {id:'legDown',name:'タオル足下げ',        type:'sets', icon:'🦵', sets:2, rep:'50回'},
-  {id:'rLeg',   name:'右足の足上げ運動',    type:'sets', icon:'🦵', sets:3, rep:'10回'},
-  {id:'lLeg',   name:'左足の足上げ運動',    type:'sets', icon:'🦵', sets:3, rep:'10回'},
-  {id:'push',   name:'車椅子プッシュアップ',type:'sets', icon:'💪', sets:3, rep:'10回'},
-  {id:'toeGrab',name:'足指タオル掴み',      type:'sets', icon:'🦶', sets:3, rep:'10回'},
-  {id:'ball',   name:'足裏ボール転がし',    type:'sets', icon:'🎾', sets:1, rep:'10分',
-                timer:600, timerLabel:'10分間ころがす'},
-];
-const MEALS = [['m','朝'],['n','昼'],['e','夜']];
-
-/* ===== 状態管理 ===== */
-const STORE='rehab-data-v1';
-function loadAll(){ try{return JSON.parse(localStorage.getItem(STORE))||{};}catch(e){return {};} }
-function saveAll(d){ try{localStorage.setItem(STORE,JSON.stringify(d));}catch(e){} }
-function todayKey(){
-  const d=new Date();
-  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-}
-function blankDay(){
-  const day={};
-  EXERCISES.forEach(ex=>{
-    if(ex.type==='meal') day[ex.id]={m:false,n:false,e:false};
-    else day[ex.id]=new Array(ex.sets).fill(false);
-  });
-  return day;
-}
-// 古い形のデータでも現メニューに合わせて壊れないよう整える（今日のデータのみ）
-function ensureShape(d){
-  EXERCISES.forEach(ex=>{
-    if(ex.type==='meal'){
-      if(!d[ex.id] || typeof d[ex.id]!=='object') d[ex.id]={m:false,n:false,e:false};
-      else { d[ex.id].m=!!d[ex.id].m; d[ex.id].n=!!d[ex.id].n; d[ex.id].e=!!d[ex.id].e; }
-    } else {
-      if(!Array.isArray(d[ex.id])) d[ex.id]=new Array(ex.sets).fill(false);
-      else if(d[ex.id].length<ex.sets){ while(d[ex.id].length<ex.sets) d[ex.id].push(false); }
-      else if(d[ex.id].length>ex.sets){ d[ex.id]=d[ex.id].slice(0,ex.sets); }
-    }
-  });
-  return d;
-}
-let DATA=loadAll();
-const TKEY=todayKey();
-if(!DATA[TKEY]) DATA[TKEY]=blankDay();
-let day=ensureShape(DATA[TKEY]);
-saveAll(DATA);
-
-/* 合計ユニット数 */
-const TOTAL=EXERCISES.reduce((s,ex)=>s+(ex.type==='meal'?3:ex.sets),0);
-
-/* ===== 描画 ===== */
-const listEl=document.getElementById('list');
-function exDone(ex){
-  if(ex.type==='meal') return MEALS.every(([k])=>day[ex.id][k]);
-  return day[ex.id].every(Boolean);
-}
-function countDone(){
-  let c=0;
-  EXERCISES.forEach(ex=>{
-    if(ex.type==='meal') c+=MEALS.filter(([k])=>day[ex.id][k]).length;
-    else c+=day[ex.id].filter(Boolean).length;
-  });
-  return c;
-}
-
-function render(){
-  // セクション分け
-  let html='<div class="sec"><span>毎食後（朝・昼・夜）</span></div>';
-  EXERCISES.filter(e=>e.type==='meal').forEach(ex=>html+=cardHTML(ex));
-  html+='<div class="sec"><span>セットでおこなう運動</span></div>';
-  EXERCISES.filter(e=>e.type==='sets').forEach(ex=>html+=cardHTML(ex));
-  listEl.innerHTML=html;
-  bind();
-  updateProgress();
-}
-
-function cardHTML(ex){
-  const done=exDone(ex);
-  let inner='';
-  if(ex.type==='meal'){
-    inner='<div class="slots">'+MEALS.map(([k,label])=>{
-      const on=day[ex.id][k];
-      return `<div class="slot ${on?'on':''}" data-ex="${ex.id}" data-meal="${k}">
-        <div class="lbl">${label}</div><div class="sub">${on?'完了':'タップ'}</div></div>`;
-    }).join('')+'</div>';
-  } else {
-    inner='<div class="sets-row">'+day[ex.id].map((on,i)=>
-      `<div class="setdot ${on?'on':''}" data-ex="${ex.id}" data-set="${i}">${i+1}</div>`
-    ).join('')+`<span style="font-size:12.5px;color:var(--muted);font-weight:700;margin-left:2px;">${ex.rep} × ${ex.sets}セット</span></div>`;
-  }
-  let timer='';
-  if(ex.timer){
-    const lbl=ex.timer>=60?(ex.timer/60)+'分':ex.timer+'秒';
-    timer=`<div class="timer-btn" data-timer="${ex.id}">⏱ タイマー（${lbl}）</div>`;
-  } else if(ex.interval){
-    timer=`<div class="timer-btn" data-timer="${ex.id}">⏱ ガイド付きタイマー（${ex.rounds}回）</div>`;
-  }
-  const sub = ex.type==='meal' ? ex.sub : (ex.rep+' × '+ex.sets+'セット');
-  return `<div class="card ${done?'done':''}" id="card-${ex.id}">
-    <div class="card-top">
-      <div class="ex-icon">${ex.icon}</div>
-      <div class="ex-meta"><div class="ex-name">${ex.name}</div><div class="ex-sub">${sub}</div></div>
-      <div class="ex-check"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div>
+<!-- Item editor modal -->
+<div class="modal" id="itemModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-card">
+    <h3 id="mTitle">項目を追加</h3>
+    <div class="fld"><label>タイトル</label><input id="mName" placeholder="例：右足の足上げ運動"/></div>
+    <div class="fld"><label>アイコン（任意）</label><div class="emoji-pick" id="mEmoji"></div></div>
+    <div class="fld"><label>セクション</label><select id="mSec"></select></div>
+    <div class="fld"><label>種類（頻度）</label><select id="mType" onchange="updateModalFields()">
+      <option value="m3">朝・昼・夜</option>
+      <option value="m2">朝・夜</option>
+      <option value="dN">1日に〇回</option>
+      <option value="repsets">〇回 × 〇セット</option>
+      <option value="seckeep">〇秒キープ × 〇セット（タイマー付き）</option>
+      <option value="timer">タイマーだけ（分・秒）</option>
+    </select></div>
+    <div class="fld" id="fDN" style="display:none"><label>1日の回数</label><input id="mDN" type="number" min="1" value="3"/></div>
+    <div class="fld row" id="fRepSets" style="display:none"><div><label>回数</label><input id="mReps" type="number" min="1" value="10"/></div><div><label>セット数</label><input id="mSets" type="number" min="1" value="3"/></div></div>
+    <div id="fSecKeep" style="display:none">
+      <div class="fld row"><div><label>秒数（キープ）</label><input id="mSec2" type="number" min="1" value="20"/></div><div><label>セット数</label><input id="mSetsK" type="number" min="1" value="10"/></div></div>
+      <div class="fld"><label>セット間の休憩（秒・任意）</label><input id="mRest" type="number" min="0" value="5"/><div class="mini">タイマーが上げ→休憩→…と自動で進みます。</div></div>
     </div>
-    ${inner}${timer}
-  </div>`;
+    <div class="fld row" id="fTimer" style="display:none"><div><label>分</label><input id="mMin" type="number" min="0" value="10"/></div><div><label>秒</label><input id="mSecOnly" type="number" min="0" value="0"/></div></div>
+    <div class="fld"><label>メモ（任意）</label><input id="mNote" placeholder="例：100m ／ 各30回 など"/></div>
+    <div class="modal-btns"><button class="mbtn ghost" onclick="closeModal()">キャンセル</button><button class="mbtn primary" onclick="saveModal()">保存</button></div>
+  </div>
+</div>
+
+<script>
+/* ====== 基本ヘルパー ====== */
+function pad2(n){return String(n).padStart(2,'0');}
+function keyOf(d){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
+function todayKey(){return keyOf(new Date());}
+function uid(p){return (p||'it_')+Math.random().toString(36).slice(2,7)+Date.now().toString(36).slice(-4);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+/* ====== 既定メニュー ====== */
+function mkSlots(id,title,icon,sec,labels,opt){opt=opt||{};return {id:id,title:title,icon:icon,sectionId:sec,kind:'slots',labels:labels.slice(),note:opt.note||'',timerKind:opt.timerKind||'none',timerSec:opt.timerSec||0,restSec:0};}
+function mkSets(id,title,icon,sec,sets,count,unit,opt){opt=opt||{};return {id:id,title:title,icon:icon,sectionId:sec,kind:'sets',sets:sets,count:count,unit:unit,note:opt.note||'',timerKind:opt.timerKind||'none',timerSec:opt.timerSec||0,restSec:opt.restSec||0};}
+function mkTimer(id,title,icon,sec2,seconds,opt){opt=opt||{};return {id:id,title:title,icon:icon,sectionId:sec2,kind:'sets',sets:1,count:0,unit:'timer',note:opt.note||'',timerKind:'single',timerSec:seconds,restSec:0};}
+function defaultMenu(){
+  var M='s_meal', S='s_sets';
+  return {
+    sections:[{id:M,title:'毎食後（朝・昼・夜）'},{id:S,title:'セットで行う運動'}],
+    items:[
+      mkSlots('stand','1分立つ','🧍',M,['朝','昼','夜'],{timerKind:'single',timerSec:60,note:'1分間'}),
+      mkSlots('laps','病棟4周','♿',M,['朝','昼','夜'],{note:'車椅子で4周'}),
+      mkSlots('heel','両足かかと上げ','👣',M,['朝','昼','夜'],{note:'各30回'}),
+      mkSlots('crutch','松葉杖100m歩行','🩼',M,['朝','昼','夜'],{note:'100m'}),
+      mkSlots('knee','膝曲げ','🦵',M,['朝','昼','夜'],{note:'20回'}),
+      mkSets('ankleUD','右足首の上げ下げ','🦶',S,2,20,'回'),
+      mkSets('ankleTW','右足首のタオル運動','🦶',S,10,20,'秒',{timerKind:'interval',timerSec:20,restSec:5}),
+      mkSets('legDown','タオル足下げ','🦵',S,2,50,'回'),
+      mkSets('rLeg','右足の足上げ運動','🦵',S,3,10,'回'),
+      mkSets('lLeg','左足の足上げ運動','🦵',S,3,10,'回'),
+      mkSets('push','車椅子プッシュアップ','💪',S,3,10,'回'),
+      mkSets('toeGrab','足指タオル掴み','🦶',S,3,10,'回'),
+      mkTimer('ball','足裏ボール転がし','🎾',S,600)
+    ]
+  };
 }
 
-function bind(){
-  document.querySelectorAll('.slot').forEach(el=>el.onclick=()=>{
-    const {ex,meal}=el.dataset; day[ex][meal]=!day[ex][meal]; commit(ex);
-  });
-  document.querySelectorAll('.setdot').forEach(el=>el.onclick=()=>{
-    const i=+el.dataset.set; const ex=el.dataset.ex; day[ex][i]=!day[ex][i]; commit(ex);
-  });
-  document.querySelectorAll('[data-timer]').forEach(el=>el.onclick=()=>openTimer(el.dataset.timer));
-}
-
-let wasComplete=false;
-function commit(exId){
-  persist();
-  // カードの見た目だけ更新（再描画は最小限）
-  const ex=EXERCISES.find(e=>e.id===exId);
-  const card=document.getElementById('card-'+exId);
-  const done=exDone(ex);
-  card.classList.toggle('done',done);
-  if(ex.type==='meal'){
-    card.querySelectorAll('.slot').forEach(s=>{
-      const on=day[exId][s.dataset.meal];
-      s.classList.toggle('on',on);
-      s.querySelector('.sub').textContent=on?'完了':'タップ';
-    });
+/* ====== 表示用ヘルパー ====== */
+function units(mi){return mi.kind==='slots' ? mi.labels.length : mi.sets;}
+function fmtDur(s){var m=Math.floor(s/60),x=s%60;return m?(x?m+'分'+x+'秒':m+'分'):x+'秒';}
+function freqText(mi){
+  var t='';
+  if(mi.kind==='slots'){
+    var L=mi.labels;
+    if(L.length===3&&L[0]==='朝')t='朝・昼・夜';
+    else if(L.length===2&&L[0]==='朝')t='朝・夜';
+    else t='1日'+L.length+'回';
   }else{
-    card.querySelectorAll('.setdot').forEach(s=>{
-      s.classList.toggle('on',day[exId][+s.dataset.set]);
-    });
+    if(mi.unit==='timer')t=fmtDur(mi.timerSec);
+    else{t=mi.count+mi.unit+' × '+mi.sets+'セット';if(mi.timerKind==='interval'&&mi.restSec>0)t+='（休憩'+mi.restSec+'秒）';}
   }
+  if(mi.note)t+='・'+mi.note;
+  return t;
+}
+function hasTimer(mi){return mi.timerKind&&mi.timerKind!=='none'&&mi.timerSec>0;}
+
+/* ====== 保存・読み込み ====== */
+var STORE_DATA='rehab-data-v1', STORE_MENU='rehab-menu-v1';
+function loadMenu(){try{return JSON.parse(localStorage.getItem(STORE_MENU));}catch(e){return null;}}
+function saveMenu(){try{localStorage.setItem(STORE_MENU,JSON.stringify(MENU));}catch(e){}}
+function loadData(){try{return JSON.parse(localStorage.getItem(STORE_DATA))||{};}catch(e){return {};}}
+function saveData(){try{localStorage.setItem(STORE_DATA,JSON.stringify(DATA));}catch(e){}}
+
+/* ====== 旧フォーマットの日次データを移行 ====== */
+var LEGACY={};defaultMenu().items.forEach(function(it){LEGACY[it.id]=it;});
+function isNewRec(r){return r&&typeof r==='object'&&r.menu&&r.state;}
+function migrateRec(old){
+  var items=[],state={},secUsed={};
+  Object.keys(old).forEach(function(id){
+    var v=old[id],def=LEGACY[id],mi;
+    if(Array.isArray(v)){
+      mi=def&&def.kind==='sets'?JSON.parse(JSON.stringify(def)):{id:id,title:(def&&def.title)||id,icon:(def&&def.icon)||'•',sectionId:(def&&def.sectionId)||'s_sets',kind:'sets',sets:v.length,count:0,unit:'回',note:'',timerKind:'none',timerSec:0,restSec:0};
+      mi.sets=v.length; state[id]=v.map(Boolean);
+    }else if(v&&typeof v==='object'){
+      mi=def&&def.kind==='slots'?JSON.parse(JSON.stringify(def)):{id:id,title:(def&&def.title)||id,icon:(def&&def.icon)||'•',sectionId:(def&&def.sectionId)||'s_meal',kind:'slots',labels:['朝','昼','夜'],note:'',timerKind:'none',timerSec:0,restSec:0};
+      if(!mi.labels)mi.labels=['朝','昼','夜'];
+      state[id]=[!!v.m,!!v.n,!!v.e];
+    }else return;
+    items.push(mi);secUsed[mi.sectionId]=1;
+  });
+  var defM=defaultMenu();
+  var sections=defM.sections.filter(function(s){return secUsed[s.id];});
+  Object.keys(secUsed).forEach(function(sid){if(!sections.some(function(s){return s.id===sid;}))sections.push({id:sid,title:'その他'});});
+  var order={};defM.items.forEach(function(it,i){order[it.id]=i;});
+  items.sort(function(a,b){var oa=order[a.id]==null?999:order[a.id],ob=order[b.id]==null?999:order[b.id];return oa-ob;});
+  return {menu:{sections:sections,items:items},state:state};
+}
+function migrateAll(){
+  var changed=false;
+  Object.keys(DATA).forEach(function(k){
+    if(!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(k))return;
+    if(!isNewRec(DATA[k])){DATA[k]=migrateRec(DATA[k]);changed=true;}
+  });
+  if(changed)saveData();
+}
+
+/* ====== 今日のレコードを現メニューに同期（状態は保持／過去日は不変） ====== */
+function snapMenu(){return JSON.parse(JSON.stringify({sections:MENU.sections,items:MENU.items}));}
+function ensureToday(){
+  var prev=DATA[TKEY];var prevState=(prev&&prev.state)?prev.state:{};
+  var state={};
+  MENU.items.forEach(function(mi){
+    var n=units(mi),old=prevState[mi.id],arr=new Array(n).fill(false);
+    if(Array.isArray(old))for(var i=0;i<Math.min(n,old.length);i++)arr[i]=!!old[i];
+    state[mi.id]=arr;
+  });
+  DATA[TKEY]={menu:snapMenu(),state:state};
+  saveData();
+}
+
+/* ====== 集計 ====== */
+function totalUnits(rec){return rec.menu.items.reduce(function(s,mi){return s+units(mi);},0);}
+function doneUnits(rec){var c=0;rec.menu.items.forEach(function(mi){(rec.state[mi.id]||[]).forEach(function(b){if(b)c++;});});return c;}
+function itemDone(rec,mi){var st=rec.state[mi.id]||[],n=units(mi),c=0;for(var i=0;i<n;i++)if(st[i])c++;return n>0&&c===n;}
+function recComplete(rec){if(!rec||!rec.menu)return false;var t=totalUnits(rec);return t>0&&doneUnits(rec)===t;}
+
+/* ====== 今日ビュー描画 ====== */
+var listEl=document.getElementById('list');
+function renderToday(){
+  var rec=DATA[TKEY],html='';
+  rec.menu.sections.forEach(function(sec){
+    var its=rec.menu.items.filter(function(m){return m.sectionId===sec.id;});
+    if(!its.length)return;
+    html+='<div class="sec"><span>'+esc(sec.title)+'</span></div>';
+    its.forEach(function(mi){html+=cardHTML(rec,mi);});
+  });
+  var known={};rec.menu.sections.forEach(function(s){known[s.id]=1;});
+  var orph=rec.menu.items.filter(function(m){return !known[m.sectionId];});
+  if(orph.length){html+='<div class="sec"><span>その他</span></div>';orph.forEach(function(mi){html+=cardHTML(rec,mi);});}
+  listEl.innerHTML=html;
+  bindToday();updateProgress();
+}
+function cardHTML(rec,mi){
+  var st=rec.state[mi.id]||[],done=itemDone(rec,mi),inner='';
+  if(mi.kind==='slots'){
+    inner='<div class="slots">'+mi.labels.map(function(lb,i){var on=!!st[i];return '<div class="slot '+(on?'on':'')+'" data-id="'+mi.id+'" data-i="'+i+'"><div class="lbl">'+esc(lb)+'</div><div class="sub">'+(on?'完了':'タップ')+'</div></div>';}).join('')+'</div>';
+  }else{
+    var n=units(mi),dots='';for(var i=0;i<n;i++){dots+='<div class="setdot '+(st[i]?'on':'')+'" data-id="'+mi.id+'" data-i="'+i+'">'+(i+1)+'</div>';}
+    inner='<div class="sets-row">'+dots+'<span style="font-size:12.5px;color:var(--muted);font-weight:700;margin-left:2px;">'+esc(freqText(mi))+'</span></div>';
+  }
+  var timer='';
+  if(hasTimer(mi)){var lbl=mi.timerKind==='interval'?(mi.timerSec+'秒×'+mi.sets):fmtDur(mi.timerSec);timer='<div class="timer-btn" data-timer="'+mi.id+'">⏱ タイマー（'+lbl+'）</div>';}
+  return '<div class="card '+(done?'done':'')+'" id="card-'+mi.id+'"><div class="card-top"><div class="ex-icon">'+esc(mi.icon||'•')+'</div><div class="ex-meta"><div class="ex-name">'+esc(mi.title)+'</div><div class="ex-sub">'+esc(freqText(mi))+'</div></div><div class="ex-check"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div></div>'+inner+timer+'</div>';
+}
+function bindToday(){
+  var rec=DATA[TKEY];
+  listEl.querySelectorAll('.slot,.setdot').forEach(function(el){el.onclick=function(){var id=el.dataset.id,i=+el.dataset.i;rec.state[id]=rec.state[id]||[];rec.state[id][i]=!rec.state[id][i];saveData();commitCard(id);};});
+  listEl.querySelectorAll('[data-timer]').forEach(function(el){el.onclick=function(){openTimer(el.dataset.timer);};});
+}
+function commitCard(id){
+  var rec=DATA[TKEY],mi=rec.menu.items.find(function(m){return m.id===id;}),card=document.getElementById('card-'+id);
+  if(!card||!mi)return;
+  card.classList.toggle('done',itemDone(rec,mi));
+  var st=rec.state[id]||[];
+  card.querySelectorAll('.slot').forEach(function(s){var on=!!st[+s.dataset.i];s.classList.toggle('on',on);var sub=s.querySelector('.sub');if(sub)sub.textContent=on?'完了':'タップ';});
+  card.querySelectorAll('.setdot').forEach(function(s){s.classList.toggle('on',!!st[+s.dataset.i]);});
   updateProgress();
 }
 
-function persist(){ DATA[TKEY]=day; saveAll(DATA); }
-
-const RING_LEN=238.76;
+/* ====== 進捗・連続・コンプリート ====== */
+var RING_LEN=238.76,wasComplete=false;
 function updateProgress(){
-  const c=countDone();
-  const pct=Math.round(c/TOTAL*100);
-  document.getElementById('ringFg').style.strokeDashoffset=RING_LEN*(1-c/TOTAL);
+  var rec=DATA[TKEY],total=totalUnits(rec),c=doneUnits(rec),pct=total?Math.round(c/total*100):0;
+  document.getElementById('ringFg').style.strokeDashoffset=RING_LEN*(1-(total?c/total:0));
   document.getElementById('ringPct').textContent=pct+'%';
   document.getElementById('doneCount').textContent=c;
-  document.getElementById('totalCount').textContent=TOTAL;
-  document.getElementById('ringFg').style.stroke = c===TOTAL ? 'var(--accent)' : 'var(--primary)';
+  document.getElementById('totalCount').textContent=total;
+  document.getElementById('ringFg').style.stroke=(total&&c===total)?'var(--accent)':'var(--primary)';
   updateStreak();
-  // コンプリート判定
-  if(c===TOTAL && !wasComplete){ wasComplete=true; showComplete(); }
-  if(c<TOTAL) wasComplete=false;
-}
-
-function isDayComplete(d){
-  if(!d) return false;
-  return EXERCISES.every(ex=> ex.type==='meal'
-    ? MEALS.every(([k])=>d[ex.id]&&d[ex.id][k])
-    : (d[ex.id]||[]).every(Boolean) && (d[ex.id]||[]).length===ex.sets);
+  if(total&&c===total&&!wasComplete){wasComplete=true;showComplete();}
+  if(c<total)wasComplete=false;
 }
 function updateStreak(){
-  // 今日から遡って連続コンプリート日数
-  let streak=0; const dt=new Date();
-  for(let i=0;i<400;i++){
-    const k=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
-    if(isDayComplete(DATA[k])) streak++;
-    else if(i>0) break;           // 今日が未完了でも昨日までの連続は数える
-    else { /* 今日未完了→続行して昨日以前を数える */ }
-    dt.setDate(dt.getDate()-1);
-  }
+  var streak=0,dt=new Date();
+  for(var i=0;i<400;i++){var k=keyOf(dt);if(recComplete(DATA[k]))streak++;else if(i>0)break;dt.setDate(dt.getDate()-1);}
   document.getElementById('streak').textContent='🔥 連続 '+streak+' 日';
 }
+function resetToday(){if(!confirm('今日の記録をすべて消して、最初からやり直しますか？'))return;DATA[TKEY].state={};ensureToday();wasComplete=false;renderToday();}
 
-function resetToday(){
-  if(!confirm('今日の記録をすべて消して、最初からやり直しますか？')) return;
-  day=blankDay(); DATA[TKEY]=day; saveAll(DATA); wasComplete=false; render();
-}
-
-/* ===== コンプリート演出 ===== */
 function showComplete(){
-  const el=document.getElementById('complete');
-  el.classList.add('show');
-  if(navigator.vibrate) navigator.vibrate([60,40,60,40,120]);
-  // 紙吹雪
-  const colors=['#E5B53A','#E8763C','#157C64','#7FCBB3','#fff'];
-  for(let i=0;i<40;i++){
-    const c=document.createElement('div');
-    c.className='confetti';
-    c.style.left=Math.random()*100+'%';
-    c.style.background=colors[i%colors.length];
-    c.style.animationDuration=(1.6+Math.random()*1.4)+'s';
-    c.style.animationDelay=(Math.random()*.4)+'s';
-    el.appendChild(c);
-    setTimeout(()=>c.remove(),3600);
-  }
+  var el=document.getElementById('complete');el.classList.add('show');
+  if(navigator.vibrate)navigator.vibrate([60,40,60,40,120]);
+  var colors=['#E5B53A','#E8763C','#157C64','#7FCBB3','#fff'];
+  for(var i=0;i<40;i++){(function(i){var c=document.createElement('div');c.className='confetti';c.style.left=Math.random()*100+'%';c.style.background=colors[i%colors.length];c.style.animationDuration=(1.6+Math.random()*1.4)+'s';c.style.animationDelay=(Math.random()*.4)+'s';el.appendChild(c);setTimeout(function(){c.remove();},3600);})(i);}
 }
-function hideComplete(){ document.getElementById('complete').classList.remove('show'); }
+function hideComplete(){document.getElementById('complete').classList.remove('show');}
 
-/* ===== タイマー（単発・インターバル両対応） ===== */
-const TRING=552.92;
-let phases=[], pIdx=0, pSec=0, tLeft=0, tInt=null, tRunning=false, tFinished=false;
-
-function buildPhases(ex){
-  if(ex.interval){
-    const out=[];
-    for(let r=1;r<=ex.rounds;r++){
-      ex.interval.forEach(p=>out.push({label:`${r}回目・${p.label}`, sec:p.sec, kind:p.label}));
-      if(ex.rest && r<ex.rounds) out.push({label:`休憩（つぎは${r+1}回目）`, sec:ex.rest, kind:'rest'});
-    }
-    return out;
-  }
-  const lbl = ex.timerLabel ? ex.timerLabel : (ex.timer>=60 ? (ex.timer/60)+'分間キープ' : ex.timer+'秒間キープ');
-  return [{label:lbl, sec:ex.timer, kind:'keep'}];
-}
-function openTimer(exId){
-  const ex=EXERCISES.find(e=>e.id===exId);
-  clearInterval(tInt); tRunning=false; tFinished=false;
-  phases=buildPhases(ex); pIdx=0; pSec=phases[0].sec; tLeft=pSec;
-  document.getElementById('tTitle').textContent=ex.name;
-  document.getElementById('tToggle').textContent='スタート';
-  paintTimer();
-  document.getElementById('timerOverlay').classList.add('show');
-}
-function paintTimer(){
-  const num=document.getElementById('tNum');
-  const sub=document.getElementById('tSub');
-  const ph=phases[pIdx]||{};
-  if(tFinished){
-    num.textContent='おわり！'; num.classList.add('fin');
-    sub.textContent='おつかれさまでした';
-  }else{
-    num.classList.remove('fin');
-    num.textContent = pSec>=60 ? Math.floor(tLeft/60)+':'+String(tLeft%60).padStart(2,'0') : tLeft;
-    sub.textContent = ph.label;
-  }
-  const frac = pSec ? tLeft/pSec : 0;
-  const ring=document.getElementById('tRing');
-  ring.style.strokeDashoffset = TRING*(1-frac);
-  let col='#157C64';                       // 通常（上げる/キープ）＝緑
-  if(ph.kind==='rest') col='#E5B53A';      // 休憩＝ゴールド
-  else if(ph.kind && ph.kind.indexOf('下げ')>=0) col='#E8763C'; // 下げ＝オレンジ
-  ring.style.stroke = col;
-}
-function tick(){
-  tLeft--;
-  if(tLeft<=0){
-    if(pIdx < phases.length-1){
-      pIdx++; pSec=phases[pIdx].sec; tLeft=pSec;
-      if(navigator.vibrate) navigator.vibrate(phases[pIdx].kind==='rest' ? [110] : [220,90,220]); // 休憩は短く、運動再開は強め
-      paintTimer();
-    }else{
-      clearInterval(tInt); tRunning=false; tFinished=true;
-      document.getElementById('tToggle').textContent='もう一度';
-      if(navigator.vibrate) navigator.vibrate([120,60,120,60,320]);
-      paintTimer();
-    }
-    return;
-  }
-  paintTimer();
-}
-function toggleTimer(){
-  if(tFinished){ tFinished=false; pIdx=0; pSec=phases[0].sec; tLeft=pSec; paintTimer(); }
-  if(tRunning){
-    tRunning=false; clearInterval(tInt);
-    document.getElementById('tToggle').textContent='再開'; return;
-  }
-  tRunning=true; document.getElementById('tToggle').textContent='一時停止';
-  clearInterval(tInt); tInt=setInterval(tick,1000);
-}
-function closeTimer(){ clearInterval(tInt); tRunning=false; document.getElementById('timerOverlay').classList.remove('show'); }
-
-/* ===== タブ切替 ===== */
+/* ====== タブ ====== */
 function switchView(v){
-  const today = v==='today';
+  var today=v==='today';
   document.getElementById('viewToday').classList.toggle('on',today);
   document.getElementById('viewHist').classList.toggle('on',!today);
   document.getElementById('tabToday').classList.toggle('on',today);
   document.getElementById('tabHist').classList.toggle('on',!today);
-  if(!today) renderCalendar();
+  if(!today){if(editing)toggleEdit();renderCalendar();}
 }
 
-/* ===== カレンダー ===== */
-function dayDoneCount(d){
-  if(!d) return 0;
-  let c=0;
-  EXERCISES.forEach(ex=>{
-    if(ex.type==='meal') c+=MEALS.filter(([k])=>d[ex.id]&&d[ex.id][k]).length;
-    else c+=(d[ex.id]||[]).filter(Boolean).length;
-  });
-  return c;
-}
-let calY, calM; // 表示中の年・月(0-11)
-function ymKey(y,m,day){ return y+'-'+String(m+1).padStart(2,'0')+'-'+String(day).padStart(2,'0'); }
-
+/* ====== カレンダー ====== */
+var calY,calM;
 function renderCalendar(){
-  const now=new Date();
-  if(calY===undefined){ calY=now.getFullYear(); calM=now.getMonth(); }
-  document.getElementById('monthTitle').textContent=`${calY}年 ${calM+1}月`;
-
-  const first=new Date(calY,calM,1).getDay();      // 0=日
-  const days=new Date(calY,calM+1,0).getDate();    // 月末日
-  const tKey=todayKey();
-  let html='';
-  for(let i=0;i<first;i++) html+='<div class="cell empty"></div>';
-
-  let fullCnt=0, anyCnt=0, doneSum=0;
-  for(let dnum=1; dnum<=days; dnum++){
-    const k=ymKey(calY,calM,dnum);
-    const d=DATA[k];
-    const done=dayDoneCount(d);
-    const isFull=done===TOTAL && done>0;
-    const isFuture=new Date(calY,calM,dnum) > new Date(now.getFullYear(),now.getMonth(),now.getDate());
-    let cls='cell';
-    if(isFuture) cls+=' future';
-    else if(isFull){ cls+=' full'; fullCnt++; anyCnt++; }
-    else if(done>0){ cls+=' partial'; anyCnt++; }
-    if(k===tKey) cls+=' today';
-    doneSum+=done;
-    const tap=isFuture?'':`onclick="openDay('${k}')"`;
-    html+=`<div class="${cls}" ${tap}><div class="dnum">${dnum}</div><div class="ddot"></div></div>`;
+  var now=new Date();
+  if(calY===undefined){calY=now.getFullYear();calM=now.getMonth();}
+  document.getElementById('monthTitle').textContent=calY+'年 '+(calM+1)+'月';
+  var first=new Date(calY,calM,1).getDay(),days=new Date(calY,calM+1,0).getDate(),tKey=todayKey(),html='';
+  for(var i=0;i<first;i++)html+='<div class="cell empty"></div>';
+  var fullCnt=0,anyCnt=0,sumDone=0,sumTotal=0;
+  for(var dn=1;dn<=days;dn++){
+    var k=calY+'-'+pad2(calM+1)+'-'+pad2(dn),rec=DATA[k];
+    var total=rec?totalUnits(rec):0,done=rec?doneUnits(rec):0;
+    var isFull=total>0&&done===total;
+    var isFuture=new Date(calY,calM,dn)>new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    var cls='cell';
+    if(isFuture)cls+=' future';
+    else if(isFull){cls+=' full';fullCnt++;anyCnt++;}
+    else if(done>0){cls+=' partial';anyCnt++;}
+    if(k===tKey)cls+=' today';
+    if(!isFuture&&rec){sumDone+=done;sumTotal+=total;}
+    var tap=isFuture?'':'onclick="openDay(\''+k+'\')"';
+    html+='<div class="'+cls+'" '+tap+'><div class="dnum">'+dn+'</div><div class="ddot"></div></div>';
   }
   document.getElementById('calGrid').innerHTML=html;
-
-  // 月の操作ボタン：未来の月へは行けない
-  const atCurrent = (calY===now.getFullYear() && calM===now.getMonth());
-  document.getElementById('nextM').disabled = atCurrent;
-
-  // サマリー（その月の達成率＝全日数に対する達成ユニット割合）
+  document.getElementById('nextM').disabled=(calY===now.getFullYear()&&calM===now.getMonth());
   document.getElementById('sumFull').textContent=fullCnt;
   document.getElementById('sumAny').textContent=anyCnt;
-  const rate=Math.round(doneSum/(days*TOTAL)*100);
-  document.getElementById('sumRate').textContent=rate+'%';
+  document.getElementById('sumRate').textContent=(sumTotal?Math.round(sumDone/sumTotal*100):0)+'%';
 }
-function moveMonth(dir){
-  calM+=dir;
-  if(calM<0){ calM=11; calY--; }
-  else if(calM>11){ calM=0; calY++; }
-  renderCalendar();
-}
+function moveMonth(d){calM+=d;if(calM<0){calM=11;calY--;}else if(calM>11){calM=0;calY++;}renderCalendar();}
 
-/* ===== 日別詳細 ===== */
+/* ====== 日別詳細 ====== */
 function openDay(k){
-  const d=DATA[k];
-  const [y,m,da]=k.split('-').map(Number);
-  const w=['日','月','火','水','木','金','土'][new Date(y,m-1,da).getDay()];
-  document.getElementById('ddTitle').textContent=`${m}月${da}日（${w}）`;
-  const done=dayDoneCount(d);
-  document.getElementById('ddRate').textContent=`達成 ${done} / ${TOTAL} 項目（${Math.round(done/TOTAL*100)}%）`;
-
-  let body='';
-  if(!d || done===0){
-    body='<div class="dd-empty">この日の記録はありません</div>';
-  } else {
-    EXERCISES.forEach(ex=>{
-      let val,ok;
-      if(ex.type==='meal'){
-        const n=MEALS.filter(([key])=>d[ex.id]&&d[ex.id][key]).length;
-        ok=n===3;
-        val = MEALS.map(([key,lbl])=> (d[ex.id]&&d[ex.id][key])?lbl:`<span style="opacity:.3">${lbl}</span>`).join(' ');
-      } else {
-        const n=(d[ex.id]||[]).filter(Boolean).length;
-        ok=n===ex.sets;
-        val=`${n} / ${ex.sets}セット`;
-      }
-      body+=`<div class="dd-row"><span class="di">${ex.icon}</span>
-        <span class="dn">${ex.name}</span>
-        <span class="dv ${ok?'ok':'no'}">${ok?'✓ ':''}${val}</span></div>`;
+  var rec=DATA[k],p=k.split('-').map(Number),w=['日','月','火','水','木','金','土'][new Date(p[0],p[1]-1,p[2]).getDay()];
+  document.getElementById('ddTitle').textContent=p[1]+'月'+p[2]+'日（'+w+'）';
+  var done=rec?doneUnits(rec):0,total=rec?totalUnits(rec):0;
+  document.getElementById('ddRate').textContent='達成 '+done+' / '+total+' 項目（'+(total?Math.round(done/total*100):0)+'%）';
+  var body='';
+  if(!rec||done===0){body='<div class="dd-empty">この日の記録はありません</div>';}
+  else{
+    rec.menu.sections.forEach(function(sec){
+      var its=rec.menu.items.filter(function(m){return m.sectionId===sec.id;});
+      if(!its.length)return;
+      its.forEach(function(mi){
+        var st=rec.state[mi.id]||[],ok,val;
+        if(mi.kind==='slots'){var nOn=0;mi.labels.forEach(function(_,i){if(st[i])nOn++;});ok=nOn===mi.labels.length;val=mi.labels.map(function(lb,i){return st[i]?esc(lb):'<span style="opacity:.3">'+esc(lb)+'</span>';}).join(' ');}
+        else{var n=units(mi),nn=0;for(var i=0;i<n;i++)if(st[i])nn++;ok=nn===n;val=nn+' / '+n+'セット';}
+        body+='<div class="dd-row"><span class="di">'+esc(mi.icon||'•')+'</span><span class="dn">'+esc(mi.title)+'</span><span class="dv '+(ok?'ok':'no')+'">'+(ok?'✓ ':'')+val+'</span></div>';
+      });
     });
   }
   document.getElementById('ddBody').innerHTML=body;
   document.getElementById('dayDetail').classList.add('show');
 }
-function closeDay(){ document.getElementById('dayDetail').classList.remove('show'); }
+function closeDay(){document.getElementById('dayDetail').classList.remove('show');}
 
-/* ===== バックアップ / 復元 ===== */
+/* ====== タイマー ====== */
+var TRING=552.92,phases=[],pIdx=0,pSec=0,tLeft=0,tInt=null,tRunning=false,tFinished=false;
+function buildPhases(mi){
+  if(mi.timerKind==='interval'){
+    var out=[];for(var r=1;r<=mi.sets;r++){out.push({label:r+'セット目',sec:mi.timerSec,kind:'keep'});if(mi.restSec>0&&r<mi.sets)out.push({label:'休憩（つぎ'+(r+1)+'セット目）',sec:mi.restSec,kind:'rest'});}
+    return out;
+  }
+  return [{label:fmtDur(mi.timerSec),sec:mi.timerSec,kind:'keep'}];
+}
+function openTimer(id){
+  var mi=DATA[TKEY].menu.items.find(function(m){return m.id===id;});if(!mi)return;
+  clearInterval(tInt);tRunning=false;tFinished=false;
+  phases=buildPhases(mi);pIdx=0;pSec=phases[0].sec;tLeft=pSec;
+  document.getElementById('tTitle').textContent=mi.title;
+  document.getElementById('tToggle').textContent='スタート';
+  paintTimer();document.getElementById('timerOverlay').classList.add('show');
+}
+function paintTimer(){
+  var num=document.getElementById('tNum'),sub=document.getElementById('tSub'),ph=phases[pIdx]||{};
+  if(tFinished){num.textContent='おわり！';num.classList.add('fin');sub.textContent='おつかれさまでした';}
+  else{num.classList.remove('fin');num.textContent=pSec>=60?Math.floor(tLeft/60)+':'+pad2(tLeft%60):tLeft;sub.textContent=ph.label;}
+  var frac=pSec?tLeft/pSec:0,ring=document.getElementById('tRing');
+  ring.style.strokeDashoffset=TRING*(1-frac);
+  var col='#157C64';if(ph.kind==='rest')col='#E5B53A';else if(ph.kind&&ph.kind.indexOf('下げ')>=0)col='#E8763C';
+  ring.style.stroke=col;
+}
+function tick(){
+  tLeft--;
+  if(tLeft<=0){
+    if(pIdx<phases.length-1){pIdx++;pSec=phases[pIdx].sec;tLeft=pSec;if(navigator.vibrate)navigator.vibrate(phases[pIdx].kind==='rest'?[110]:[220,90,220]);paintTimer();}
+    else{clearInterval(tInt);tRunning=false;tFinished=true;document.getElementById('tToggle').textContent='もう一度';if(navigator.vibrate)navigator.vibrate([120,60,120,60,320]);paintTimer();}
+    return;
+  }
+  paintTimer();
+}
+function toggleTimer(){
+  if(tFinished){tFinished=false;pIdx=0;pSec=phases[0].sec;tLeft=pSec;paintTimer();}
+  if(tRunning){tRunning=false;clearInterval(tInt);document.getElementById('tToggle').textContent='再開';return;}
+  tRunning=true;document.getElementById('tToggle').textContent='一時停止';clearInterval(tInt);tInt=setInterval(tick,1000);
+}
+function closeTimer(){clearInterval(tInt);tRunning=false;document.getElementById('timerOverlay').classList.remove('show');}
+
+/* ====== 編集モード ====== */
+var editing=false;
+function toggleEdit(){
+  editing=!editing;
+  document.getElementById('editBtn').classList.toggle('on',editing);
+  document.getElementById('editBtn').textContent=editing?'✓ 編集を終わる':'✎ 項目を編集';
+  document.getElementById('footBox').style.display=editing?'none':'';
+  if(editing){renderEdit();}else{saveMenu();ensureToday();renderToday();}
+}
+function renderEdit(){
+  var html='';
+  MENU.sections.forEach(function(sec){
+    html+='<div class="sec-edit" data-sec="'+sec.id+'"><span class="sec-handle" data-sechandle="'+sec.id+'">≡</span><input value="'+esc(sec.title)+'" data-sectitle="'+sec.id+'"/><button class="sdel" data-secdel="'+sec.id+'">削除</button></div>';
+    MENU.items.filter(function(m){return m.sectionId===sec.id;}).forEach(function(mi){html+=erowHTML(mi);});
+    html+='<button class="add-item-btn" data-additem="'+sec.id+'">＋ この欄に項目を追加</button>';
+  });
+  html+='<button class="add-sec-btn" data-addsec="1">＋ セクションを追加</button>';
+  html+='<div class="edit-tip">≡ を押しながら上下にドラッグで並べ替え／✎で編集／🗑で削除。<br>変更は<b>今日から</b>反映され、前日までの達成率は変わりません。</div>';
+  listEl.innerHTML=html;
+  bindEdit();
+}
+function erowHTML(mi){
+  return '<div class="erow" data-item="'+mi.id+'"><span class="handle" data-handle="'+mi.id+'">≡</span><span class="ei">'+esc(mi.icon||'•')+'</span><div class="et"><div class="nm">'+esc(mi.title)+'</div><div class="fq">'+esc(freqText(mi))+'</div></div><button class="ebtn" data-edit="'+mi.id+'">✎</button><button class="ebtn del" data-del="'+mi.id+'">🗑</button></div>';
+}
+function bindEdit(){
+  listEl.querySelectorAll('[data-sectitle]').forEach(function(inp){inp.onchange=function(){var s=MENU.sections.find(function(x){return x.id===inp.dataset.sectitle;});if(s){s.title=inp.value.trim()||'(無題)';saveMenu();}};});
+  listEl.querySelectorAll('[data-secdel]').forEach(function(b){b.onclick=function(){delSection(b.dataset.secdel);};});
+  listEl.querySelectorAll('[data-additem]').forEach(function(b){b.onclick=function(){openModal(null,b.dataset.additem);};});
+  listEl.querySelectorAll('[data-addsec]').forEach(function(b){b.onclick=function(){MENU.sections.push({id:uid('sec_'),title:'新しいセクション'});saveMenu();renderEdit();};});
+  listEl.querySelectorAll('[data-edit]').forEach(function(b){b.onclick=function(){var mi=MENU.items.find(function(x){return x.id===b.dataset.edit;});openModal(mi,mi.sectionId);};});
+  listEl.querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(){var mi=MENU.items.find(function(x){return x.id===b.dataset.del;});if(confirm('「'+mi.title+'」を削除しますか？（今日から反映されます）')){MENU.items=MENU.items.filter(function(x){return x.id!==b.dataset.del;});saveMenu();renderEdit();}};});
+  listEl.querySelectorAll('[data-handle]').forEach(function(h){h.addEventListener('pointerdown',function(ev){startItemDrag(h.dataset.handle,ev);});});
+  listEl.querySelectorAll('[data-sechandle]').forEach(function(h){h.addEventListener('pointerdown',function(ev){startSecDrag(h.dataset.sechandle,ev);});});
+}
+function delSection(secId){
+  var its=MENU.items.filter(function(m){return m.sectionId===secId;});
+  var msg=its.length?('このセクション内の '+its.length+' 項目も削除されます。よろしいですか？'):'このセクションを削除しますか？';
+  if(!confirm(msg))return;
+  MENU.items=MENU.items.filter(function(m){return m.sectionId!==secId;});
+  MENU.sections=MENU.sections.filter(function(s){return s.id!==secId;});
+  saveMenu();renderEdit();
+}
+
+/* ---- ドラッグ並べ替え（項目） ---- */
+var dragItem=null,dragLast=null;
+function startItemDrag(id,ev){
+  ev.preventDefault();dragItem=id;dragLast=null;
+  var row=listEl.querySelector('.erow[data-item="'+id+'"]');if(row)row.classList.add('dragging');
+  document.addEventListener('pointermove',onItemMove);
+  document.addEventListener('pointerup',onItemUp);
+}
+function onItemMove(ev){
+  if(!dragItem)return;
+  var el=document.elementFromPoint(ev.clientX,ev.clientY);if(!el)return;
+  var row=el.closest?el.closest('.erow'):null;
+  var sec=el.closest?el.closest('.sec-edit'):null;
+  if(row&&row.dataset.item&&row.dataset.item!==dragItem){
+    if(dragLast!=='i:'+row.dataset.item){dragLast='i:'+row.dataset.item;moveItemBefore(dragItem,row.dataset.item);renderEditKeepDrag();}
+  }else if(sec&&sec.dataset.sec){
+    if(dragLast!=='s:'+sec.dataset.sec){dragLast='s:'+sec.dataset.sec;moveItemToSection(dragItem,sec.dataset.sec);renderEditKeepDrag();}
+  }
+}
+function onItemUp(){document.removeEventListener('pointermove',onItemMove);document.removeEventListener('pointerup',onItemUp);dragItem=null;dragLast=null;saveMenu();renderEdit();}
+function renderEditKeepDrag(){var id=dragItem;renderEdit();var row=listEl.querySelector('.erow[data-item="'+id+'"]');if(row)row.classList.add('dragging');}
+function moveItemBefore(dragId,targetId){
+  var it=MENU.items.filter(function(x){return x.id===dragId;})[0];if(!it)return;
+  MENU.items=MENU.items.filter(function(x){return x.id!==dragId;});
+  var ti=MENU.items.findIndex(function(x){return x.id===targetId;});if(ti<0){MENU.items.push(it);return;}
+  it.sectionId=MENU.items[ti].sectionId;MENU.items.splice(ti,0,it);
+}
+function moveItemToSection(dragId,secId){
+  var it=MENU.items.filter(function(x){return x.id===dragId;})[0];if(!it)return;
+  MENU.items=MENU.items.filter(function(x){return x.id!==dragId;});it.sectionId=secId;
+  var lastIdx=-1;MENU.items.forEach(function(x,i){if(x.sectionId===secId)lastIdx=i;});
+  if(lastIdx>=0)MENU.items.splice(lastIdx+1,0,it);else MENU.items.push(it);
+}
+
+/* ---- ドラッグ並べ替え（セクション） ---- */
+var dragSec=null,dragSecLast=null;
+function startSecDrag(id,ev){
+  ev.preventDefault();dragSec=id;dragSecLast=null;
+  var row=listEl.querySelector('.sec-edit[data-sec="'+id+'"]');if(row)row.classList.add('dragging');
+  document.addEventListener('pointermove',onSecMove);
+  document.addEventListener('pointerup',onSecUp);
+}
+function onSecMove(ev){
+  if(!dragSec)return;var el=document.elementFromPoint(ev.clientX,ev.clientY);if(!el)return;
+  var sec=el.closest?el.closest('.sec-edit'):null;
+  if(sec&&sec.dataset.sec&&sec.dataset.sec!==dragSec&&dragSecLast!==sec.dataset.sec){
+    dragSecLast=sec.dataset.sec;moveSecBefore(dragSec,sec.dataset.sec);
+    var keep=dragSec;renderEdit();var r=listEl.querySelector('.sec-edit[data-sec="'+keep+'"]');if(r)r.classList.add('dragging');
+  }
+}
+function onSecUp(){document.removeEventListener('pointermove',onSecMove);document.removeEventListener('pointerup',onSecUp);dragSec=null;dragSecLast=null;saveMenu();renderEdit();}
+function moveSecBefore(dragId,targetId){
+  var s=MENU.sections.filter(function(x){return x.id===dragId;})[0];if(!s)return;
+  MENU.sections=MENU.sections.filter(function(x){return x.id!==dragId;});
+  var ti=MENU.sections.findIndex(function(x){return x.id===targetId;});if(ti<0){MENU.sections.push(s);return;}
+  MENU.sections.splice(ti,0,s);
+}
+
+/* ====== 項目エディタ・モーダル ====== */
+var EMOJIS=['🦶','🦵','💪','🧍','♿','🩼','👣','🎾','✊','🙆','🤸','🚶','🪑','❤️','⏱'];
+var editingItem=null,modalSecId=null,pickedEmoji='';
+function openModal(mi,secId){
+  editingItem=mi||null;modalSecId=secId||MENU.sections[0].id;
+  document.getElementById('mTitle').textContent=mi?'項目を編集':'項目を追加';
+  document.getElementById('mName').value=mi?mi.title:'';
+  document.getElementById('mNote').value=mi?(mi.note||''):'';
+  pickedEmoji=mi?(mi.icon||''):'';
+  // emoji picker
+  var ep=document.getElementById('mEmoji');ep.innerHTML=EMOJIS.map(function(e){return '<button type="button" data-e="'+e+'" class="'+(e===pickedEmoji?'on':'')+'">'+e+'</button>';}).join('');
+  ep.querySelectorAll('button').forEach(function(b){b.onclick=function(){pickedEmoji=b.dataset.e;ep.querySelectorAll('button').forEach(function(x){x.classList.toggle('on',x.dataset.e===pickedEmoji);});};});
+  // sections
+  var ss=document.getElementById('mSec');ss.innerHTML=MENU.sections.map(function(s){return '<option value="'+s.id+'"'+(s.id===modalSecId?' selected':'')+'>'+esc(s.title)+'</option>';}).join('');
+  // type + fields
+  var type='repsets';
+  if(mi){
+    if(mi.kind==='slots'){type=(mi.labels.length===3&&mi.labels[0]==='朝')?'m3':(mi.labels.length===2&&mi.labels[0]==='朝')?'m2':'dN';if(type==='dN')document.getElementById('mDN').value=mi.labels.length;}
+    else{if(mi.unit==='timer')type='timer';else if(mi.timerKind==='interval')type='seckeep';else type='repsets';}
+    if(type==='repsets'){document.getElementById('mReps').value=mi.count||10;document.getElementById('mSets').value=mi.sets||3;}
+    if(type==='seckeep'){document.getElementById('mSec2').value=mi.timerSec||20;document.getElementById('mSetsK').value=mi.sets||10;document.getElementById('mRest').value=mi.restSec||0;}
+    if(type==='timer'){document.getElementById('mMin').value=Math.floor((mi.timerSec||0)/60);document.getElementById('mSecOnly').value=(mi.timerSec||0)%60;}
+  }
+  document.getElementById('mType').value=type;
+  updateModalFields();
+  document.getElementById('itemModal').classList.add('show');
+}
+function updateModalFields(){
+  var t=document.getElementById('mType').value;
+  document.getElementById('fDN').style.display=t==='dN'?'':'none';
+  document.getElementById('fRepSets').style.display=t==='repsets'?'':'none';
+  document.getElementById('fSecKeep').style.display=t==='seckeep'?'':'none';
+  document.getElementById('fTimer').style.display=t==='timer'?'':'none';
+}
+function closeModal(){document.getElementById('itemModal').classList.remove('show');editingItem=null;}
+function saveModal(){
+  var title=document.getElementById('mName').value.trim();
+  if(!title){alert('タイトルを入力してください。');return;}
+  var t=document.getElementById('mType').value,secId=document.getElementById('mSec').value,note=document.getElementById('mNote').value.trim();
+  var id=editingItem?editingItem.id:uid('it_');
+  var mi={id:id,title:title,icon:pickedEmoji,sectionId:secId,note:note,timerKind:'none',timerSec:0,restSec:0};
+  function num(idn,min,def){var v=parseInt(document.getElementById(idn).value,10);if(isNaN(v))v=def;if(v<min)v=min;return v;}
+  if(t==='m3'){mi.kind='slots';mi.labels=['朝','昼','夜'];}
+  else if(t==='m2'){mi.kind='slots';mi.labels=['朝','夜'];}
+  else if(t==='dN'){var n=num('mDN',1,3);mi.kind='slots';mi.labels=[];for(var i=1;i<=n;i++)mi.labels.push(String(i));}
+  else if(t==='repsets'){mi.kind='sets';mi.unit='回';mi.count=num('mReps',1,10);mi.sets=num('mSets',1,3);}
+  else if(t==='seckeep'){mi.kind='sets';mi.unit='秒';mi.count=num('mSec2',1,20);mi.timerSec=mi.count;mi.sets=num('mSetsK',1,10);mi.restSec=num('mRest',0,0);mi.timerKind='interval';}
+  else if(t==='timer'){mi.kind='sets';mi.unit='timer';mi.sets=1;mi.count=0;mi.timerSec=num('mMin',0,0)*60+num('mSecOnly',0,0);mi.timerKind='single';if(mi.timerSec<1)mi.timerSec=1;}
+  // 朝昼夜などスロット型で、元々ボタン式タイマー（例：1分立つ）があった場合は引き継ぐ
+  if(mi.kind==='slots'&&editingItem&&editingItem.kind==='slots'&&editingItem.timerKind==='single'){mi.timerKind='single';mi.timerSec=editingItem.timerSec;}
+  if(editingItem){var idx=MENU.items.findIndex(function(x){return x.id===id;});MENU.items[idx]=mi;}
+  else MENU.items.push(mi);
+  saveMenu();closeModal();renderEdit();
+}
+
+/* ====== バックアップ / 復元 ====== */
 function exportData(){
   try{
-    const blob=new Blob([JSON.stringify(DATA)],{type:'application/json'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url; a.download=`rehab-backup-${todayKey()}.json`;
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),1500);
-  }catch(e){ alert('書き出しに失敗しました。'); }
+    var payload={__rehab:1,version:APP_VERSION,menu:MENU,data:DATA};
+    var blob=new Blob([JSON.stringify(payload)],{type:'application/json'});
+    var url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download='rehab-backup-'+todayKey()+'.json';document.body.appendChild(a);a.click();a.remove();
+    setTimeout(function(){URL.revokeObjectURL(url);},1500);
+  }catch(e){alert('書き出しに失敗しました。');}
 }
 function importData(e){
-  const f=e.target.files && e.target.files[0]; if(!f) return;
-  const r=new FileReader();
-  r.onload=()=>{
+  var f=e.target.files&&e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){
     try{
-      const obj=JSON.parse(r.result);
-      if(!obj || typeof obj!=='object' || Array.isArray(obj)) throw 0;
-      let added=0;
-      // 日付ごとに復元。同じ日付はバックアップ側で上書き、無い日はそのまま追加
-      Object.keys(obj).forEach(k=>{ DATA[k]=obj[k]; added++; });
-      saveAll(DATA);
-      alert(`復元しました（${added}日分）。画面を更新します。`);
-      location.reload();
-    }catch(err){ alert('このファイルは読み込めませんでした。バックアップで書き出したJSONを選んでください。'); }
-    finally{ e.target.value=''; }
+      var obj=JSON.parse(r.result);
+      if(obj&&obj.__rehab){if(obj.menu)MENU=obj.menu;if(obj.data)DATA=obj.data;}
+      else if(obj&&typeof obj==='object'&&!Array.isArray(obj)){DATA=obj;}
+      else throw 0;
+      saveMenu();saveData();
+      alert('復元しました。画面を更新します。');location.reload();
+    }catch(err){alert('このファイルは読み込めませんでした。バックアップで書き出したJSONを選んでください。');}
+    finally{e.target.value='';}
   };
   r.readAsText(f);
 }
 
-/* ===== バージョン / 更新 ===== */
-const APP_VERSION='8';   // アプリを更新したら version.json と sw.js も合わせて増やす
-async function checkUpdate(){
+/* ====== バージョン / 自動更新 ====== */
+var APP_VERSION='9';
+function checkUpdate(){
+  (async function(){try{if('serviceWorker' in navigator){var reg=await navigator.serviceWorker.getRegistration();if(reg)await reg.update();}}catch(e){}location.reload();})();
+}
+var updChecking=false;
+async function autoUpdateCheck(){
+  if(updChecking)return;updChecking=true;
   try{
-    if('serviceWorker' in navigator){
-      const reg=await navigator.serviceWorker.getRegistration();
-      if(reg) await reg.update();
+    var res=await fetch('version.json?t='+Date.now(),{cache:'no-store'});
+    if(res.ok){
+      var v=(await res.json()).version;
+      if(v&&v!==APP_VERSION){
+        var tries=+(sessionStorage.getItem('updTries')||0);
+        if(tries<2){sessionStorage.setItem('updTries',tries+1);try{var reg=await navigator.serviceWorker.getRegistration();if(reg)await reg.update();}catch(e){}location.reload();return;}
+      }else{sessionStorage.removeItem('updTries');}
     }
   }catch(e){}
-  location.reload();
+  updChecking=false;
 }
 
-/* ===== 自動アップデート =====
-   iPhoneのPWAは開き直しても前回の画面を復元するだけで再読み込みされないことがある。
-   そこで「起動時」と「アプリが前面に戻ったとき」に version.json をキャッシュ無視で確認し、
-   新しいバージョンが見つかったら自動で再読み込みして最新化する。 */
-let updateChecking=false;
-async function autoUpdateCheck(){
-  if(updateChecking) return; updateChecking=true;
-  try{
-    const res=await fetch('version.json?t='+Date.now(), {cache:'no-store'});
-    if(res.ok){
-      const v=(await res.json()).version;
-      if(v && v!==APP_VERSION){
-        // 無限リロード防止：同じ版への再読み込みは2回まで
-        const tries=+(sessionStorage.getItem('updTries')||0);
-        if(tries<2){
-          sessionStorage.setItem('updTries', tries+1);
-          try{
-            const reg=await navigator.serviceWorker.getRegistration();
-            if(reg) await reg.update();
-          }catch(e){}
-          location.reload();
-          return;
-        }
-      }else{
-        sessionStorage.removeItem('updTries');
-      }
-    }
-  }catch(e){ /* オフライン時は何もしない */ }
-  updateChecking=false;
-}
+/* ====== 初期化 ====== */
+function setDateLine(){var d=new Date(),w=['日','月','火','水','木','金','土'][d.getDay()];document.getElementById('dateLine').textContent=(d.getMonth()+1)+'月'+d.getDate()+'日（'+w+'）';}
+function dismissHint(){document.getElementById('installHint').style.display='none';localStorage.setItem('hideHint','1');}
+(function(){var standalone=window.navigator.standalone||window.matchMedia('(display-mode: standalone)').matches;var isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);if(isIOS&&!standalone&&!localStorage.getItem('hideHint')){document.getElementById('installHint').style.display='flex';}})();
 
-/* ===== 日付・初期化 ===== */
-function setDateLine(){
-  const d=new Date(); const w=['日','月','火','水','木','金','土'][d.getDay()];
-  document.getElementById('dateLine').textContent=`${d.getMonth()+1}月${d.getDate()}日（${w}）`;
-}
-function dismissHint(){ document.getElementById('installHint').style.display='none'; localStorage.setItem('hideHint','1'); }
-// iOS Safari（ホーム画面未追加）のときだけ案内
-(function(){
-  const standalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-  const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
-  if(isIOS && !standalone && !localStorage.getItem('hideHint')){
-    document.getElementById('installHint').style.display='flex';
-  }
-})();
+var MENU=loadMenu()||defaultMenu();saveMenu();
+var DATA=loadData();
+var TKEY=todayKey();
+migrateAll();
+ensureToday();
 
 setDateLine();
-document.getElementById('appVer').textContent = APP_VERSION;
-wasComplete = (countDone()===TOTAL);   // 既に完了済みの日を開いただけでは演出を出さない
-render();
+document.getElementById('appVer').textContent=APP_VERSION;
+wasComplete=(function(){var rec=DATA[TKEY];return totalUnits(rec)>0&&doneUnits(rec)===totalUnits(rec);})();
+renderToday();
 
-// 起動時に新版チェック
 autoUpdateCheck();
-// アプリが前面に戻ったら：日付の切り替え＆新版チェック（PWAが再読み込みされない対策の本丸）
-document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='visible'){
-    if(todayKey()!==TKEY){ location.reload(); return; }
-    autoUpdateCheck();
-  }
-});
-// 日付が変わったら自動更新（アプリを開きっぱなしでも）
-setInterval(()=>{ if(todayKey()!==TKEY) location.reload(); }, 60000);
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'){if(todayKey()!==TKEY){location.reload();return;}autoUpdateCheck();}});
+setInterval(function(){if(todayKey()!==TKEY)location.reload();},60000);
 
-// Service Worker 登録（オフライン対応＋新版を自動反映）
 if('serviceWorker' in navigator){
-  let reloaded=false;
-  // 新しいSWが有効になったら一度だけ自動リロード＝更新が確実に反映される
-  navigator.serviceWorker.addEventListener('controllerchange',()=>{
-    if(reloaded) return; reloaded=true; location.reload();
-  });
-  window.addEventListener('load', async ()=>{
+  var reloaded=false;
+  navigator.serviceWorker.addEventListener('controllerchange',function(){if(reloaded)return;reloaded=true;location.reload();});
+  window.addEventListener('load',async function(){
     try{
-      // updateViaCache:'none' … sw.js自体をHTTPキャッシュに頼らず確認する
-      const reg=await navigator.serviceWorker.register('sw.js', {updateViaCache:'none'});
-      reg.update();                       // 起動のたびに新版を確認
-      // 念のため：待機中の新SWがあればすぐ有効化
-      if(reg.waiting) reg.waiting.postMessage('skipWaiting');
-      reg.addEventListener('updatefound',()=>{
-        const nw=reg.installing;
-        if(!nw) return;
-        nw.addEventListener('statechange',()=>{
-          if(nw.state==='installed' && navigator.serviceWorker.controller){
-            nw.postMessage('skipWaiting');
-          }
-        });
-      });
+      var reg=await navigator.serviceWorker.register('sw.js',{updateViaCache:'none'});
+      reg.update();
+      if(reg.waiting)reg.waiting.postMessage('skipWaiting');
+      reg.addEventListener('updatefound',function(){var nw=reg.installing;if(!nw)return;nw.addEventListener('statechange',function(){if(nw.state==='installed'&&navigator.serviceWorker.controller){nw.postMessage('skipWaiting');}});});
     }catch(e){}
   });
 }

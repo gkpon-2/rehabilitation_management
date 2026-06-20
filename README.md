@@ -4,23 +4,37 @@
 
 素材は商用素材・有料フォント・外部ライブラリを使用していません（アイコンは自作、項目アイコンは絵文字、フォントは端末標準、ライブラリなしの素のHTML/CSS/JS）。
 
-## 入っているファイル
+## 入っているファイル（すべて同じ階層に置きます）
+
 ```
-index.html        … アプリ本体（これ1つで動きます）
-manifest.json     … ホーム画面追加の設定
-sw.js             … オフライン用（サービスワーカー）
-icons/            … アイコン画像
+index.html            画面の構造（HTMLのみ）
+style.css             スタイル（CSS）
+helpers.js            共通ヘルパー（日付/ID/エスケープ・表示用の整形）
+menu.js               メニュー定義（項目ビルダー・初期/旧メニュー）＋保存読込
+data.js               データモデル（移行・今日同期・集計）
+today.js              今日ビュー（カード描画・記録・達成リング/演出）
+calendar.js           タブ・カレンダー・日別詳細
+timer.js              タイマー（単発／セットごと＋休憩）
+editor.js             編集モード＋iOS風スムーズ並べ替え
+modal.js              項目エディタ（頻度＋独立タイマーの入力）
+system.js             バックアップ/復元・バージョン/自動更新
+main.js               初期化（最後に読み込み）
+manifest.json         ホーム画面追加の設定
+sw.js                 オフライン用（Service Worker）
+version.json          自動更新の判定に使う版番号
+icon-180.png / icon-192.png / icon-512.png / icon-maskable-512.png / favicon-64.png   アイコン（自作）
 ```
-※ すべて同じ階層に置いてください。フォルダ構成は変えないでください。
+
+すべて素のHTML/CSS/JavaScriptで、TypeScriptやビルドツールは使っていません。サブフォルダは無く、**全ファイルを同じ階層**に置きます（スマホからでもまとめてアップロードしやすい構成）。`js` は `index.html` の末尾で順番に読み込まれ、グローバルスコープを共有します（最後の `main.js` が初期化を実行）。
 
 ---
 
 ## ① GitHub Pages で公開する手順
 
 1. GitHub で新しいリポジトリを作る（例：`rehab`）。公開（Public）でOK。
-2. 作成後の画面で **「uploading an existing file」** をクリック。
-3. ここにある **index.html / manifest.json / sw.js と icons フォルダの中身** をまとめてドラッグ＆ドロップ。
-   - icons の中の画像5つも忘れずに。GitHubの画面で `icons/icon-192.png` のようにパスを保ったままアップロードされればOKです。
+2. 作成後の画面で **「uploading an existing file」** をタップ。
+3. **このフォルダ内のファイルを全部**（index.html・style.css・各種.js・manifest.json・sw.js・version.json・画像5枚）選んでアップロード。
+   - サブフォルダは無いので、すべて同じ階層のまま上げればOK。スマホのファイルアプリから複数選択でまとめて選べます。
 4. 緑の **「Commit changes」** を押す。
 5. 上のメニュー **Settings → 左メニュー Pages** を開く。
 6. **Build and deployment** の Source を **「Deploy from a branch」**、Branch を **`main`／`/(root)`** にして Save。

@@ -1,41 +1,49 @@
-// 更新するたびにこの数字を増やしてください（index.htmlのAPP_VERSION・version.jsonと合わせる）
-const CACHE = 'rehab-v11';
+// 更新するたびに増やす（index.htmlのAPP_VERSION・version.jsonと合わせる）
+const CACHE = 'rehab-v13';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './icons/icon-180.png',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/favicon-64.png'
+  './style.css',
+  './helpers.js',
+  './menu.js',
+  './data.js',
+  './today.js',
+  './calendar.js',
+  './timer.js',
+  './editor.js',
+  './modal.js',
+  './system.js',
+  './main.js',
+  './icon-180.png',
+  './icon-192.png',
+  './icon-512.png',
+  './favicon-64.png'
 ];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)));
-  self.skipWaiting();           // 新版をすぐ待機解除
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
       .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
-      .then(() => self.clients.claim())   // すぐ操作権を取る＝開いている画面に即反映
+      .then(() => self.clients.claim())
   );
 });
 
-// ページからの依頼で即時有効化（更新の取りこぼし防止）
 self.addEventListener('message', (e) => {
   if (e.data === 'skipWaiting') self.skipWaiting();
 });
 
-// ネット優先・失敗時のみキャッシュ
-// ページ本体(HTML)とversion.jsonはHTTPキャッシュも飛ばして常に最新を取りに行く
+// ネット優先・失敗時キャッシュ。HTML/JS/CSS/version.json はHTTPキャッシュも飛ばして最新取得
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
-  const isPage = e.request.mode === 'navigate'
-    || e.request.url.includes('index.html')
-    || e.request.url.includes('version.json');
-  const req = isPage ? new Request(e.request.url, { cache: 'no-store' }) : e.request;
+  const u = e.request.url;
+  const fresh = e.request.mode === 'navigate' || /\.(html|js|css)$|version\.json/.test(u);
+  const req = fresh ? new Request(u, { cache: 'no-store' }) : e.request;
   e.respondWith(
     fetch(req)
       .then((res) => {
